@@ -1,0 +1,84 @@
+﻿# CMakeList.txt : CMake project for Terraria, include source and define
+# project specific logic here.
+#
+cmake_minimum_required (VERSION 4.2)# 3.19.2
+
+set(CMAKE_CXX_STANDARD 20)#17
+
+# ! ! ! ! ! !
+# Set To True To Ship Game
+# Changes absolute resource path
+# ! ! ! ! ! !
+set(PRODUCTION_BUILD OFF CACHE BOOL "Make this a produciton build" FORCE)
+
+# Enable Hot Reload for MSVC compilers if supported.
+if (POLICY CMP0141)
+  cmake_policy(SET CMP0141 NEW)
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+endif()
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+
+if (PRODUCTION_BUILD)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)# LINK time optimization
+else()
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+endif()
+
+project ("Terraria")
+
+# Add Sub Directory
+
+# Find All Sources
+file (GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+
+# Add source to this project's executable.
+add_executable ("${PROJECT_NAME}")
+
+# Refresh Cmake And C++ Version For Project
+if (CMAKE_VERSION VERSION_GREATER 3.12)
+  set_property(TARGET Terraria PROPERTY CXX_STANDARD 20)
+endif()
+
+# Define Absolute Project Path
+if (PRODUCTION_BUILD)
+	
+	# Setup the ASSETS_PATH macro to the final assets directory when you share the project
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="./resources/")
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=1)
+else()
+	# This is useful to get an ASSETS_PATH in your IDE during development but you should comment this if you compile a release version
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=0)
+endif()
+
+# Add Sources To Executable
+target_sources("${CMAKE_PROJECT_NAME}" PRIVATE ${MY_SOURCES})
+
+# Removes Terminal/Console from Production Build
+if(MSVC) # If using the VS compiler...
+
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC _CRT_SECURE_NO_WARNINGS)
+
+	if(PRODUCTION_BUILD)
+		#YOU CAN REMOVE THE CONSOLE WITH THIS LINE!
+		set_target_properties("${CMAKE_PROJECT_NAME}" PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup") #no console
+	endif()
+
+elseif(MINGW) # Windows / MinGW GCC/Clang
+	if(PRODUCTION_BUILD)
+		# Remove console on Windows under MinGW
+		target_link_options("${CMAKE_PROJECT_NAME}" PRIVATE
+			-mwindows
+		)
+	endif()
+
+elseif(APPLE OR UNIX) # macOS / Linux
+	if(PRODUCTION_BUILD)
+		target_link_options("${CMAKE_PROJECT_NAME}" PRIVATE -s)
+	endif()
+endif()
+
+target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/")
+# TODO: Add tests and install targets if needed.

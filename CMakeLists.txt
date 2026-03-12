@@ -26,9 +26,15 @@ else()
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
 endif()
 
-project ("Terraria")
+# Static Link Libraries
+set (BUILD_SHARED_LIBS OFF CACHE BOOL "Build Raylib as static libraries" FORCE)
+
+project ("Terra")
 
 # Add Sub Directory
+add_subdirectory(thirdparty/raylib)
+add_subdirectory(thirdparty/imgui-docking)
+add_subdirectory(thirdparty/rlImgui)
 
 # Find All Sources
 file (GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
@@ -38,7 +44,7 @@ add_executable ("${PROJECT_NAME}")
 
 # Refresh Cmake And C++ Version For Project
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET Terraria PROPERTY CXX_STANDARD 20)
+  set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 20)
 endif()
 
 # Define Absolute Project Path
@@ -80,5 +86,7 @@ elseif(APPLE OR UNIX) # macOS / Linux
 	endif()
 endif()
 
-target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/")
+target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/gameLayer/")
+target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/")
 # TODO: Add tests and install targets if needed.
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE raylib_static imgui rlimgui)

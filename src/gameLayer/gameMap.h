@@ -5,16 +5,30 @@
 #include <vector>
 
 #include <blocks.h>
-#include <walls.h>
+#include <asserts.h>
 #include <random>
+#include <randomStuff.h>
+
+struct WorldLayer
+{
+	const char* name;
+	Block block = {};
+	Wall wall = {};
+	int heightStart = 0;
+	int heightEnd = 0;
+	unsigned int height = 0;
+	int smoothness = 0;
+	float frequency = 0;
+};
 
 struct GameMap
 {
-	int w;
-	int h;
-	 
+	int w = 1;
+	int h = 1;
+
 	std::vector<Block> mapData;
 	std::vector<Wall> wallData;
+	std::vector<WorldLayer> layerData;
 	std::ranlux24_base seed;
 
 	void create(int w, int h);

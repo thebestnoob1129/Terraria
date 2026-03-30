@@ -35,6 +35,7 @@ project ("Terra")
 add_subdirectory(thirdparty/raylib)
 add_subdirectory(thirdparty/imgui-docking)
 add_subdirectory(thirdparty/rlImgui)
+add_subdirectory(thirdparty/fastNoiseSIMD)
 
 # Find All Sources
 file (GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
@@ -89,4 +90,4 @@ endif()
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/gameLayer/")
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/")
 # TODO: Add tests and install targets if needed.
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE raylib_static imgui rlimgui)
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE raylib_static imgui rlimgui fastNoiseSIMD)

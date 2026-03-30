@@ -1,7 +1,5 @@
 #include "gameMap.h"
 
-#include <asserts.h>
-
 static std::ranlux24_base rng(std::random_device{}());
 
 void GameMap::create(int w, int h)

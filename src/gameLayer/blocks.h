@@ -76,5 +76,46 @@ struct Block
 
 	std::uint16_t type = 0;
 	std::uint16_t variation = 0;
+
+	void sanatize()
+	{
+		if (type >= BLOCK_COUNT)
+		{
+			type = 0;
+		}
+	}
 };
+
+struct Wall
+{
+	enum
+	{
+		air = 0,
+		dirtWall,
+		grassWall,
+		stoneWall,
+		woodWall,
+		sandStoneWall,
+		brickWall,
+		glassWall,
+		copperBlockWall,
+		silverBlockWall,
+		goldBlockWall,
+		snowWall,
+		sandWall,
+		stoneBricksWall,
+		rubyBlockWall,
+		heroglyphWall,
+		blueRubyWall,
+		plankedWall,
+		snowBrickWall,
+		boneBrickWall,
+
+		BLOCKS_COUNT,
+	};
+
+	std::uint16_t variation = 0;
+	std::uint16_t type = 0;
+};
+
 #endif

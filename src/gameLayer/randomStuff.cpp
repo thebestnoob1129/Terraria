@@ -1,17 +1,5 @@
 #include "randomStuff.h"
 
-/*
-
-void foo()
-{
-	std::ranlux24_base rng(std::random_device{}());
-
-	std::uniform_int_distribution<int> dist(0, 100);
-
-	int result = dist(rng);
-}
-*/
-
 float getRandomFloat(std::ranlux24_base& rng, float min, float max)
 {
 	std::uniform_real_distribution<> dis(min, max);

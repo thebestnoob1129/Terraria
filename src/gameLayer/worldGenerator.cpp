@@ -1,5 +1,11 @@
 #include "worldGenerator.h"
 
+#include "saveMap.h"
+
+void _generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
+{
+}
+
 void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 {
 	gameMap.create(w, h);
@@ -36,6 +42,8 @@ void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 		.frequency = 0.01f,
 	};
 	gameMap.layerData.push_back(sandLayer);
+
+	
 
 	// Layer Noise Generator
 	float* dirtNoise = generateNoise(seed++, FastNoiseSIMD::SimplexFractal, dirtLayer.smoothness, dirtLayer.frequency, 0, w);
@@ -77,6 +85,8 @@ void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 	int snowEnd = snowStart + 100 + getRandomInt(rng, 0, 100);
 	snowEnd = std::min<int>(w, snowEnd);
 	
+	Structure treeStructure;
+	loadBlockDataFromFile(treeStructure.mapData, treeStructure.w, treeStructure.h, RESOURCES_PATH "structure/tree.bin");
 	
 	// 
 	for (int x = 0; x < w; x++)
@@ -202,6 +212,73 @@ void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 	}
 
 #pragma endregion
+
+}
+
+auto createLayer = [&](GameMap& gameMap, Block ground, Wall wall, Vector2 size, Vector2 hills)
+{
+	// Fill Space with Block And Wall within diameter
+	WorldLayer newLayer;
+	std::ranlux24_base rng(gameMap.seed);
+
+	// Create Noise Map
+	float* noise = generateNoise(gameMap.seed, FastNoiseSIMD::SimplexFractal, hills.x, hills.y, 0.25f, gameMap.w);
+	for (int i = 0; i < gameMap.w; i++)
+	{
+		noise[i] = (noise[i] + 1) / 2; // Convert from [-1, 1] to [0, 1]
+	}
+	
+	// Generate World Data
+	for (int i = 0; i < gameMap.w; i++)
+	{
+		int height = size.y + noise[i] * size.x;
+		for (int y = 0; y < gameMap.h; y++)
+		{
+			Block& b = gameMap.getBlockUnsave(i, y);
+			Wall& w = gameMap.getWallUnsave(i, y);
+			if (y > height)
+			{
+				b.type = ground.type;
+				w.type = wall.type;
+			}
+		}
+	}
+	
+	// Let Caves Generate Last
+	return newLayer;
+};
+/*
+void generateTrees()
+{
+	for (int x = 0; x < 100; x++)
+	{
+		if (getRandomChance(rng, 0.04f)) // Chance To Spawn Tree Per Column
+		{
+			for (int y = 0; y < h; y++)
+			{
+				auto type = gameMap.getBlockUnsave(x, y).type;
+				if (type == Block::air) continue;
+				if (type != Block::grassBlock) continue;
+
+				Vector2 spawnPos = { (float)x, (float)y };
+
+				spawnPos.x -= treeStructure.w / 2; // Center Tree
+				spawnPos.y -= treeStructure.h; // Spawn on top of ground
+
+				treeStructure.pasteIntoMap(gameMap, spawnPos);
+				x += 3; // Avoids Tree Overlapping
+				break;
+			}
+		}
+	}
+}
+*/
+Structure generateStructure(GameMap& gameMap, Vector2 position, const char* filename)
+{
+	Structure newStructure;
+	loadBlockDataFromFile(newStructure.mapData, newStructure.w, newStructure.h, RESOURCES_PATH (filename));
+
+	return newStructure;
 
 }
 

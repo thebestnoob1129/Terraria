@@ -26,10 +26,11 @@ struct GameMap
 	int w = 1;
 	int h = 1;
 
-	std::vector<Block> mapData;
-	std::vector<Wall> wallData;
-	std::vector<WorldLayer> layerData;
-	std::ranlux24_base seed;
+	std::vector<Block> mapData = {};
+	std::vector<Wall> wallData = {};
+	std::vector<WorldLayer> layerData = {};
+	unsigned int seed = 0;
+	std::ranlux24_base rng = {};
 
 	void create(int w, int h);
 

@@ -7,6 +7,7 @@
 #include "raymath.h"
 #include <iostream>
 #include <FastNoiseSIMD.h>
+#include <structure.h>
 
 
 

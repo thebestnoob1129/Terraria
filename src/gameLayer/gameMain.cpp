@@ -29,7 +29,7 @@ bool init_game()
 {
 	assetManager.loadAll();
 
-	generateWorld(gameData.gameMap, 1234, 900, 500);
+	generateWorld(gameData.gameMap, 0, 1000, 500);
 
 	// Camera
 	gameData.camera.target = Vector2{ 20, 100 };

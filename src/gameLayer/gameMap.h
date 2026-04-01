@@ -11,7 +11,7 @@
 
 struct WorldLayer
 {
-	const char* name;
+	const char* name = "";
 	Block block = {};
 	Wall wall = {};
 	int heightStart = 0;

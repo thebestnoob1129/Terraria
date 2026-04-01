@@ -1,55 +1,15 @@
 #include "worldGenerator.h"
 
-#include "saveMap.h"
-
-void _generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
-{
-}
-
 void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 {
 	gameMap.create(w, h);
 
+	w = std::clamp(w, 100, 10000);
+	h = std::clamp(h, 100, 10000);
+
 	std::ranlux24_base rng(seed++);
 
-#pragma region Layers
-	WorldLayer dirtLayer = {
-		.block = Block::dirt,
-		.wall = Wall::dirtWall,
-		.heightStart = -50,
-		.heightEnd = 35,
-		.smoothness = 8,
-		.frequency = 0.01f
-	};
-	gameMap.layerData.push_back(dirtLayer);
-
-	WorldLayer stoneLayer = {
-		.block = Block::stone,
-		.wall = Wall::stoneWall,
-		.heightStart = static_cast<int>(h * 0.3f),
-		.heightEnd = static_cast<int>(h * 0.4f),
-		.smoothness = 4,
-		.frequency = 0.01f
-	};
-	gameMap.layerData.push_back(stoneLayer);
-
-	WorldLayer sandLayer = {
-		.block = Block::sand,
-		.wall = Wall::sandWall,
-		.heightStart = static_cast<int>(h*0.5f),
-		.heightEnd = static_cast<int>(h*0.6),
-		.smoothness = 4,
-		.frequency = 0.01f,
-	};
-	gameMap.layerData.push_back(sandLayer);
-
-	
-
-	// Layer Noise Generator
-	float* dirtNoise = generateNoise(seed++, FastNoiseSIMD::SimplexFractal, dirtLayer.smoothness, dirtLayer.frequency, 0, w);
-	float* stoneNoise = generateNoise(seed++, FastNoiseSIMD::SimplexFractal, stoneLayer.smoothness, stoneLayer.frequency, 0, w);
-	float* sandNoise = generateNoise(seed++, FastNoiseSIMD::SimplexFractal, sandLayer.smoothness, sandLayer.frequency, 0, w);
-	float* mountainNoise = generateNoise(seed++, FastNoiseSIMD::SimplexFractal,  4, 0.03f, 0, w);
+	float* mountainNoise = generateNoise(seed++, FastNoiseSIMD::SimplexFractal, 4, 0.03f, 0, w);
 	float* plainsNoise = generateNoise(seed++, FastNoiseSIMD::SimplexFractal, 8, 0.01f, 0, w);
 	float* caveNoise = generateNoise(seed++, FastNoiseSIMD::ValueFractal, 3, 0.02f, 0, h, w, 1);
 
@@ -58,28 +18,130 @@ void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 	{
 		mountainNoise[i] = (mountainNoise[i] + 1) / 2;
 		plainsNoise[i] = (plainsNoise[i] + 1) / 2;
-		
-		//dirtNoise[i] = (dirtNoise[i] + 1) / 2;
-		dirtNoise[i] = Lerp((plainsNoise[i] + 1) / 2, std::pow(mountainNoise[i], 2), dirtNoise[i]) ;
-		//stoneNoise[i] = (stoneNoise[i] + 1) / 2;
-		stoneNoise[i] = Lerp((plainsNoise[i] + 1) / 2, std::pow(mountainNoise[i], 2), stoneNoise[i]) ;
-
-		sandNoise[i] = Lerp((plainsNoise[i] + 1) / 2, std::pow(mountainNoise[i], 2), sandNoise[i]) ;
 		// stoneNoise[i] = std::pow(stoneNoise[i], 2); // Steeper Mountains
 	}
 
-	for (int i = 0; i < w*h; i++)
+	auto createLayer = [&](Block ground, Wall wall, Vector2 size, Vector2 hills)
+		{
+			// Fill Space with Block And Wall within diameter
+			WorldLayer newLayer;
+			std::ranlux24_base rng(gameMap.seed++);
+
+			// Create Noise Map
+			float* noise = generateNoise(gameMap.seed++, FastNoiseSIMD::SimplexFractal, hills.x, hills.y, 0.25f, gameMap.w);
+			for (int i = 0; i < gameMap.w; i++)
+			{
+				noise[i] = Lerp((plainsNoise[i] + 1) / 2, std::pow(mountainNoise[i], 2), noise[i]);
+			}
+
+
+			// Generate World Data
+			for (int i = 0; i < gameMap.w; i++)
+			{
+				int height = size.y + noise[i] * size.x;
+				for (int y = 0; y < gameMap.h; y++)
+				{
+					Block& b = gameMap.getBlockUnsave(i, y);
+					Wall& w = gameMap.getWallUnsave(i, y);
+					if (y > height)
+					{
+						b.type = ground.type;
+						w.type = wall.type;
+					}
+				}
+			}
+
+			gameMap.layerData.push_back(newLayer);
+			FastNoiseSIMD::FreeNoiseSet(noise);
+			return newLayer;
+		};
+
+	auto createBiome = [&](Block ground, Wall wall, Vector2 width, Vector2 height)
+		{
+			// Vector2 is percentage of world
+
+			int biomeStart = gameMap.w * width.x;
+			int biomeEnd = gameMap.w * width.y;
+
+			int biomeHeightStart = gameMap.h * height.x;
+			int biomeHeightEnd = gameMap.h * height.y;
+
+			int biomeMid = (biomeStart, biomeEnd) / 2;
+			int biomeHalfWidth = (biomeEnd - biomeStart) / 2;
+
+			float* noise = generateNoise(gameMap.seed++, FastNoiseSIMD::Cellular, 4, 0.1f, 0, gameMap.w);
+
+			for (int i = 0; i < gameMap.w; i++)
+			{
+				noise[i] = (noise[i] + 1) / 2; // Convert from [-1, 1] to [0, 1]
+			}
+
+			for (int x = biomeStart; x < biomeEnd; x++)
+			{
+				for (int y = biomeHeightStart; y < biomeHeightEnd; y++)
+				{
+					int newX = x + getRandomInt(rng, -20, 20);
+
+					Block& b = gameMap.getBlockUnsave(newX, y);
+					Wall& w = gameMap.getWallUnsave(newX, y);
+					b.type = ground.type;
+					w.type = wall.type;
+
+					if (y > biomeHeightStart && y < biomeHeightEnd)
+					{
+						b.type = Block::sand;
+					}
+
+				}
+			}
+
+			// Check all objects in biome area and apply biome if in biome
+
+			FastNoiseSIMD::FreeNoiseSet(noise);
+			return true;
+		};
+
+	// Layers
+
+	WorldLayer dirtLayer = createLayer(Block{ Block::dirt, 0 }, Wall{ Wall::dirtWall, 0 }, { 50, h * 0.2f }, { 8, 0.01f });
+	WorldLayer stoneLayer = createLayer(Block{ Block::stone, 0 }, Wall{ Wall::stoneWall, 0 }, { 50, h * 0.4f }, { 4, 0.01f });
+	WorldLayer iceLayer = createLayer(Block{ Block::ice, 0 }, Wall{ Wall::snowWall, 0 }, { 50, h * 0.6f }, { 4, 0.01f });
+
+	// Biomes
+
+	createBiome({ Block::sand, 0 }, { Wall::sandWall, 0 }, Vector2{ 0.2f, 0.4f }, { 0.1f, 0.4f });
+
+	// Caves
+
+	//generateCave(gameMap, seed++, 3, 0.02f);
+
+	// Perlin Worm
+	for (int i = 0; i < 100; i++)
 	{
-		caveNoise[i] = (caveNoise[i] + 1) / 2;
+		float x = getRandomInt(rng, 10, w - 10);
+		float y = getRandomInt(rng, 51, h - 10);
+
+		int wormLength = getRandomInt(rng, getRandomInt(rng, 100, w / 4), getRandomInt(rng, 100, h / 4));
+
+
+		if (getRandomChance(rng, 0.8f))
+		{
+			generateWorm(gameMap, x, y, wormLength);
+		}
 	}
 
-	auto getCaveNoise = [&](int x, int y)
-	{
-		return caveNoise[x + y * w];
-	};
+	// Structures
 
-#pragma endregion
+	FastNoiseSIMD::FreeNoiseSet(plainsNoise);
+	FastNoiseSIMD::FreeNoiseSet(mountainNoise);
+	FastNoiseSIMD::FreeNoiseSet(caveNoise);
+}
+/*
+void _generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
+{
+	gameMap.create(w, h);
 
+	std::ranlux24_base rng(seed++);
 
 	int snowStart = getRandomInt(rng, 10, w - 210);
 	int snowEnd = snowStart + 100 + getRandomInt(rng, 0, 100);
@@ -87,8 +149,7 @@ void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 	
 	Structure treeStructure;
 	loadBlockDataFromFile(treeStructure.mapData, treeStructure.w, treeStructure.h, RESOURCES_PATH "structure/tree.bin");
-	
-	// 
+
 	for (int x = 0; x < w; x++)
 	{
 		
@@ -104,13 +165,6 @@ void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 			grassType = Block::snow;
 			stoneType = Block::ice;
 		}
-
-
-		// Create Dynamic
-
-		int sandHeight = sandLayer.heightStart + (sandLayer.heightEnd - sandLayer.heightStart) * sandNoise[x];
-		int stoneHeight = sandHeight - ( stoneLayer.heightStart + (stoneLayer.heightEnd - stoneLayer.heightStart) * stoneNoise[x]);
-		int dirtHeight =  stoneHeight - ( dirtLayer.heightStart + (dirtLayer.heightEnd - dirtLayer.heightStart) * dirtNoise[x]);
 		// for each layer
 
 		// get the last layer
@@ -123,32 +177,8 @@ void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 			Block b;
 			Wall w;
 
-			if (y > dirtHeight)
-			{
-				b.type = dirtType;
-				w.type = dirtType;
-			}
-
-			if (y == dirtHeight)
-			{
-				b.type = grassType;
-				w.type = grassType;
-			}
-			
-			if (y >= stoneHeight)
-			{
-				b.type = stoneType;
-				w.type = stoneType;
-			}
-
-			if (y >= sandHeight)
-			{
-				b.type = sandLayer.block.type;
-				w.type = sandLayer.wall.type;
-			}
-			
 			// if In Biome
-
+			
 			if (inSnow)
 			{
 				int snowMid = (snowStart + snowEnd) / 2;
@@ -184,69 +214,12 @@ void generateWorld(GameMap& gameMap, unsigned int seed, int w, int h)
 
 			gameMap.getBlockUnsave(x, y) = b;
 			gameMap.getWallUnsave(x, y) = w;
-
+			
 		}
 	}
-	FastNoiseSIMD::FreeNoiseSet(dirtNoise);
-	FastNoiseSIMD::FreeNoiseSet(stoneNoise);
-	FastNoiseSIMD::FreeNoiseSet(sandNoise);
-	FastNoiseSIMD::FreeNoiseSet(mountainNoise);
-	FastNoiseSIMD::FreeNoiseSet(plainsNoise);
-	FastNoiseSIMD::FreeNoiseSet(caveNoise);
-
-#pragma region Perlin Worm
-
-	for (int i = 0; i < 20; i++)
-	{
-		float x = getRandomInt(rng, 10, w - 10);
-		float y = getRandomInt(rng, 51, h - 10);
-
-		int wormLength = getRandomInt(rng, getRandomInt(rng, 100, w / 4), getRandomInt(rng, 100, h / 4));
-		
-		float radius = 1.5f;
-
-		if (getRandomChance(rng, 0.5f))
-		{
-			generateWorm(gameMap, x, y, wormLength);
-		}
-	}
-
-#pragma endregion
-
 }
+*/
 
-auto createLayer = [&](GameMap& gameMap, Block ground, Wall wall, Vector2 size, Vector2 hills)
-{
-	// Fill Space with Block And Wall within diameter
-	WorldLayer newLayer;
-	std::ranlux24_base rng(gameMap.seed);
-
-	// Create Noise Map
-	float* noise = generateNoise(gameMap.seed, FastNoiseSIMD::SimplexFractal, hills.x, hills.y, 0.25f, gameMap.w);
-	for (int i = 0; i < gameMap.w; i++)
-	{
-		noise[i] = (noise[i] + 1) / 2; // Convert from [-1, 1] to [0, 1]
-	}
-	
-	// Generate World Data
-	for (int i = 0; i < gameMap.w; i++)
-	{
-		int height = size.y + noise[i] * size.x;
-		for (int y = 0; y < gameMap.h; y++)
-		{
-			Block& b = gameMap.getBlockUnsave(i, y);
-			Wall& w = gameMap.getWallUnsave(i, y);
-			if (y > height)
-			{
-				b.type = ground.type;
-				w.type = wall.type;
-			}
-		}
-	}
-	
-	// Let Caves Generate Last
-	return newLayer;
-};
 /*
 void generateTrees()
 {
@@ -275,8 +248,10 @@ void generateTrees()
 */
 Structure generateStructure(GameMap& gameMap, Vector2 position, const char* filename)
 {
+	std::string location = RESOURCES_PATH "structures/" + std::string(filename);
+
 	Structure newStructure;
-	loadBlockDataFromFile(newStructure.mapData, newStructure.w, newStructure.h, RESOURCES_PATH (filename));
+	loadBlockDataFromFile(newStructure.mapData, newStructure.w, newStructure.h, location.c_str());
 
 	return newStructure;
 
@@ -304,6 +279,42 @@ float* generateNoise(unsigned int seed, FastNoiseSIMD::NoiseType noise, unsigned
 
 }
 
+void generateCave(GameMap &gameMap, unsigned int seed, int octaves, float frequency, float radius)
+{
+	int w = gameMap.w;
+	int h = gameMap.h;
+
+	float* caveNoise = generateNoise(seed, FastNoiseSIMD::ValueFractal, octaves, frequency, 0, h, w, 1);
+
+	for (int i = 0; i < w * h; i++)
+	{
+		caveNoise[i] = (caveNoise[i] + 1) / 2;
+	}
+
+	auto getCaveNoise = [&](int x, int y)
+		{
+
+			return caveNoise[x + y * w];
+		};
+
+	for (int x = 0; gameMap.w; x++)
+	{
+		for (int y = 0; gameMap.h; y++)
+		{
+			if (getCaveNoise(x, y) < 0.5 && getCaveNoise(x, y) > 0.3) // Percent of World
+			{
+				auto b = gameMap.getBlockUnsave(x, y);
+				b.type = Block::air;
+
+				auto wall = gameMap.getWallUnsave(x, y);
+				wall.type = Wall::air;
+			}
+		}
+	}
+	FastNoiseSIMD::FreeNoiseSet(caveNoise);
+
+}
+
 void generateWorm(GameMap& gameMap, float x, float y, int length, float radius)
 {
 
@@ -315,13 +326,16 @@ void generateWorm(GameMap& gameMap, float x, float y, int length, float radius)
 	// distance to change direction
 	int changeDirTime = getRandomInt(rng, 5, 20);
 
+	radius = getRandomInt(rng, 5, 35);
+	radius = getRandomFloat(rng, radius * 0.75f, radius * 1.25f);
+
 	for (int j = 0; j < length; j++)
 	{
 		
 		// Clear Circle around positon
-		radius = getRandomFloat(rng, 0.5f, radius);
+		int newRadius = getRandomFloat(rng, 0.5f, radius);
 
-		int intRadius = std::ceil(radius);
+		int intRadius = std::ceil(newRadius);
 		for (int ox = -intRadius; ox <= intRadius; ox++)
 		{
 			for (int oy = -intRadius; oy <= intRadius; oy++)
@@ -371,7 +385,7 @@ void generateWorm(GameMap& gameMap, float x, float y, int length, float radius)
 
 		// Random radius wobble
 		radius += (getRandomFloat(rng, -0.2f, 0.2f));
-		radius = std::clamp(radius, 2.2f, 8.5f);
+		radius = std::clamp(radius, 2.1f, 100.0f);
 
 	}
 

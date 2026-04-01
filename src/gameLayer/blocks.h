@@ -6,6 +6,16 @@
 
 struct Block
 {
+	std::uint16_t type = 0;
+	std::uint16_t variation = 0;
+
+	void sanatize()
+	{
+		if (type >= BLOCK_COUNT)
+		{
+			type = 0;
+		}
+	}
 	enum
 	{
 		air = 0,
@@ -74,20 +84,13 @@ struct Block
 		BLOCK_COUNT,
 	};
 
-	std::uint16_t type = 0;
-	std::uint16_t variation = 0;
-
-	void sanatize()
-	{
-		if (type >= BLOCK_COUNT)
-		{
-			type = 0;
-		}
-	}
 };
 
 struct Wall
 {
+
+	std::uint16_t type = 0;
+	std::uint16_t variation = 0;
 	enum
 	{
 		air = 0,
@@ -113,9 +116,6 @@ struct Wall
 
 		BLOCKS_COUNT,
 	};
-
-	std::uint16_t variation = 0;
-	std::uint16_t type = 0;
 };
 
 #endif

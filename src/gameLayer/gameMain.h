@@ -11,10 +11,11 @@
 #include <raymath.h>
 #include <randomStuff.h>
 #include <string>
+#include <limits>
 
-#include "imgui.h"
-#include "worldGenerator.h"
-#include "structure.h"
+#include <imgui.h>
+#include <worldGenerator.h>
+#include <structure.h>
 
 bool init_game();
 bool update_game();

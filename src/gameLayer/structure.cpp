@@ -98,7 +98,7 @@ void Structure::pasteIntoMap(GameMap& map, Vector2 start)
 
 			if (b)
 			{
-				std::cout << b << "\n";
+				//std::cout << b << "\n";
 				*b = getBlockUnsave(x, y);
 			}
 		}

@@ -29,7 +29,7 @@ bool init_game()
 {
 	assetManager.loadAll();
 
-	generateWorld(gameData.gameMap, 0, 1000, 500);
+	generateWorld(gameData.gameMap,1000, 500);
 
 	// Camera
 	gameData.camera.target = Vector2{ 20, 100 };
@@ -136,10 +136,10 @@ bool update_game()
 			auto& w = gameData.gameMap.getWallUnsave(x, y);
 
 
-			if (w.type != Wall::air)
+			if (w.type != Block::air)
 			{
 				DrawTexturePro(
-					assetManager.walls, getTextureAtlas(w.type, w.variation, 32, 32),
+					assetManager.walls, getTextureAtlas(w.type, w.variation),
 					{ static_cast<float>(x), static_cast<float>(y), 1, 1 },
 					{ 0, 0 },// Origin From Top Left Corner
 					0.0f, // Rotation
@@ -149,7 +149,7 @@ bool update_game()
 			if (b.type != Block::air)
 			{
 				DrawTexturePro(
-					assetManager.textures, getTextureAtlas(b.type, b.variation, 32, 32),
+					assetManager.textures, getTextureAtlas(b.type, b.variation),
 					{ static_cast<float>(x), static_cast<float>(y), 1, 1 },
 					{ 0, 0 },// Origin From Top Left Corner
 					0.0f, // Rotation
@@ -164,7 +164,7 @@ bool update_game()
 	// Cursor
 	DrawTexturePro(
 		assetManager.textures,
-		getTextureAtlas(selectedBlock.type, 0, 32, 32),
+		getTextureAtlas(selectedBlock.type, 0),
 		{ static_cast<float>(blockX), static_cast<float>(blockY), 1, 1 },
 		{ 0, 0 },// Origin From Top Left Corner
 		0.0f, // Rotation
@@ -172,7 +172,7 @@ bool update_game()
 	//
 	DrawTexturePro(
 		assetManager.frame,
-		getTextureAtlas(0, 0, 32, 32),
+		getTextureAtlas(0, 0),
 		{ static_cast<float>(blockX), static_cast<float>(blockY), 1, 1 },
 		{ 0, 0 },// Origin From Top Left Corner
 		0.0f, // Rotation
@@ -180,7 +180,7 @@ bool update_game()
 
 	if (showImgui)
 	{
-		Rectangle rect;
+		Rectangle rect = {};
 		rect.x = gameData.selectionStart.x;
 		rect.y = gameData.selectionStart.y;
 		rect.width = gameData.selectionEnd.x - gameData.selectionStart.x;
@@ -223,7 +223,9 @@ bool update_game()
 
 		if (ImGui::Button("Create New World"))
 		{
-			generateWorld(gameData.gameMap, genSeed, genWorldWidth, genWorldHeight);
+			gameData.gameMap.seed = genSeed;
+			std::cout << "Set Seed: " << gameData.gameMap.seed << " | " << genSeed << "\n";
+			generateWorld(gameData.gameMap,genWorldWidth, genWorldHeight);
 		}
 
 		if (ImGui::Button("Copy"))
@@ -266,7 +268,36 @@ bool update_game()
 
 		for (int i = 0; i < Block::BLOCK_COUNT; i++)
 		{
-			auto atlas = getTextureAtlas(i, 0, 32, 32);
+			auto atlas = getTextureAtlas(i, 0);
+			atlas.x /= assetManager.textures.width;
+			atlas.width /= assetManager.textures.width;
+			atlas.y /= assetManager.textures.height;
+			atlas.height /= assetManager.textures.height;
+
+			ImGui::PushID(i);
+
+			std::string str = std::to_string(i);
+			const char* char_ptr = str.c_str();
+
+			ImTextureID tex = static_cast<ImTextureID>(static_cast<intptr_t>(assetManager.textures.id));
+			if (ImGui::ImageButton(char_ptr, tex,
+				{35, 35}, {atlas.x, atlas.y},
+				{atlas.x + atlas.width, atlas.y + atlas.height}))
+			{
+				gameData.creativeSelectedBlock = i;
+			}
+
+			ImGui::PopID();
+
+			if (i % 10 != 0)
+			{
+				ImGui::SameLine();
+			}
+
+		}
+		for (int i = 0; i < Block::BLOCK_COUNT; i++)
+		{
+			auto atlas = getTextureAtlas(i, 0);
 			atlas.x /= assetManager.textures.width;
 			atlas.width /= assetManager.textures.width;
 			atlas.y /= assetManager.textures.height;

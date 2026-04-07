@@ -1,9 +1,5 @@
 #include "gameMain.h"
 
-#include "saveMap.h"
-#include "structure.h"
-
-
 // Add Trees
 
 struct GameData
@@ -18,6 +14,8 @@ struct GameData
 	Vector2 selectionEnd = {};
 
 	char saveName[100]{};
+
+	PhysicalEntity player = {};
 
 }gameData;
 
@@ -34,7 +32,12 @@ bool init_game()
 	// Camera
 	gameData.camera.target = Vector2{ 20, 100 };
 	gameData.camera.rotation = 0.0f;
-	gameData.camera.zoom = 10.0f;
+	gameData.camera.zoom = 100.0f;
+
+	gameData.player.transform.position = Vector2{ 20, 100 };
+	gameData.player.texture = assetManager.player;
+	gameData.player.transform.w = 0.9f;
+	gameData.player.transform.h = 1.8f;
 
 	return true;
 }
@@ -52,11 +55,13 @@ bool update_game()
 
 #pragma region Camera Movement
 	static float cameraSpeed = 7;
-
-	if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) gameData.camera.target.y -= cameraSpeed * deltaTime;
-	if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) gameData.camera.target.y += cameraSpeed * deltaTime;
-	if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) gameData.camera.target.x -= cameraSpeed * deltaTime;
-	if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) gameData.camera.target.x += cameraSpeed * deltaTime;
+	/*
+	if (IsKeyDown(KEY_UP)) gameData.camera.target.y -= cameraSpeed * deltaTime;
+	if (IsKeyDown(KEY_DOWN)) gameData.camera.target.y += cameraSpeed * deltaTime;
+	if (IsKeyDown(KEY_LEFT)) gameData.camera.target.x -= cameraSpeed * deltaTime;
+	if (IsKeyDown(KEY_RIGHT)) gameData.camera.target.x += cameraSpeed * deltaTime;
+	*/
+	gameData.camera.target = gameData.player.transform.position;
 
 #pragma endregion
 
@@ -64,6 +69,8 @@ bool update_game()
 	Vector2 worldPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
 	int blockX = static_cast<int>(floor(worldPos.x));
 	int blockY = static_cast<int>(floor(worldPos.y));
+
+	int createDistance = 5;
 
 	auto selectedBlock = static_cast<Block>(gameData.creativeSelectedBlock);
 
@@ -86,24 +93,46 @@ bool update_game()
 		if (IsKeyDown(KEY_LEFT_CONTROL) && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 		{
 			gameData.creativeSelectedBlock = gameData.gameMap.getBlockSafe(blockX, blockY)->type;
-			std::cout << "Copied Block: " << gameData.gameMap.getBlockSafe(blockX, blockY)->type;
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 		{
-			auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
-			if (b) *b = {};
-			std::cout << "Destroy Block \n";
+			if (blockX <= gameData.player.transform.position.x + createDistance && blockX >= gameData.player.transform.position.x - createDistance &&
+				blockY <= gameData.player.transform.position.y + createDistance && blockY >= gameData.player.transform.position.y - createDistance)
+			{
+				auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+				if (b) *b = {};
+			}
+			
 		}
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 		{
-			auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
-			if (b) b->type = gameData.creativeSelectedBlock;
-			std::cout << "Created Block: " << gameData.creativeSelectedBlock << "\n";
+			if (blockX <= gameData.player.transform.position.x + createDistance && blockX >= gameData.player.transform.position.x - createDistance &&
+				blockY <= gameData.player.transform.position.y + createDistance && blockY >= gameData.player.transform.position.y - createDistance)
+			{
+				auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+				if (b) b->type = gameData.creativeSelectedBlock;
+			}
 		}
 
 	}
 
+
+#pragma endregion
+
+
+#pragma region Entities
+	float playerSpeed = 7;
+
+	if (IsKeyDown(KEY_W)) gameData.player.transform.position.y -= playerSpeed * deltaTime;
+	if (IsKeyDown(KEY_S)) gameData.player.transform.position.y += playerSpeed * deltaTime;
+	if (IsKeyDown(KEY_A)) gameData.player.transform.position.x -= playerSpeed * deltaTime;
+	if (IsKeyDown(KEY_D)) gameData.player.transform.position.x += playerSpeed * deltaTime;
+
+	gameData.player.applyGravity();
+	gameData.player.updateForces(deltaTime);
+	gameData.player.resolveConstrains(gameData.gameMap);
+	gameData.player.updateFinal();
 
 #pragma endregion
 
@@ -126,6 +155,7 @@ bool update_game()
 	endYView = Clamp(endYView, 0, gameData.gameMap.h - 1);
 
 #pragma endregion
+
 
 	// Generate World Blocks
 	for (int y = startYView; y < endYView; y++)
@@ -158,6 +188,25 @@ bool update_game()
 		}
 	}
 
+#pragma region Player
+	// Player
+	Transform2D playerSprite = gameData.player.transform;
+	playerSprite.w = 1;
+	playerSprite.h = 2;
+
+	playerSprite.position.y -= (playerSprite.h - gameData.player.transform.h) / 2;
+
+	DrawTexturePro(
+		assetManager.player,
+		getTextureAtlas(0, 0, 32, 64),
+		playerSprite.getAABB(),
+		{ 0, 0 },// Origin From Top Left Corner
+		0.0f,
+		WHITE
+	);
+
+#pragma endregion
+
 #pragma region Creative
 
 
@@ -180,6 +229,8 @@ bool update_game()
 
 	if (showImgui)
 	{
+
+		// Block Selection
 		Rectangle rect = {};
 		rect.x = gameData.selectionStart.x;
 		rect.y = gameData.selectionStart.y;
@@ -190,6 +241,10 @@ bool update_game()
 		rect.height++;
 
 		DrawRectangleLinesEx(rect, 0.1f, { 53, 86, 223, 255 });
+
+		// Player Outline
+		DrawRectangleLinesEx(gameData.player.transform.getAABB(), 0.1f, Color{ 52, 164, 39, 255 });
+
 	}
 
 #pragma endregion 
@@ -212,6 +267,24 @@ bool update_game()
 
 		ImGui::EndChild();
 
+		ImGui::BeginChild("Player Data", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.3f));
+
+		Vector2 teleportPosition = { 20, 100 };
+
+		ImGui::InputFloat2("Player Position:", &gameData.player.transform.position.x);
+		ImGui::InputFloat2("Player Velocity:", &gameData.player.velocity.x);
+		ImGui::InputFloat2("Player Acceleration:", &gameData.player.acceleration.x);
+		ImGui::InputFloat2("Teleport To:", &teleportPosition.x);
+		
+		if (ImGui::Button("Teleport Player"))
+		{
+			gameData.player.teleport(teleportPosition);
+		}
+
+		//ImGui::SliderFloat("Player speed:", &playerSpeed, 10, 150);
+
+		ImGui::EndChild();
+
 		ImGui::Separator();
 
 		// World Data
@@ -224,7 +297,6 @@ bool update_game()
 		if (ImGui::Button("Create New World"))
 		{
 			gameData.gameMap.seed = genSeed;
-			std::cout << "Set Seed: " << gameData.gameMap.seed << " | " << genSeed << "\n";
 			generateWorld(gameData.gameMap,genWorldWidth, genWorldHeight);
 		}
 
@@ -235,7 +307,7 @@ bool update_game()
 
 		ImGui::EndChild();
 
-		ImGui::BeginChild("Save Data", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.6f));
+		ImGui::BeginChild("Save Data", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.5f));
 		
 		ImGui::InputText("Save Name", gameData.saveName, sizeof(gameData.saveName));
 
@@ -264,7 +336,7 @@ bool update_game()
 
 		ImGui::Separator();
 
-		ImGui::BeginChild("Creative ", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.8f));
+		ImGui::BeginChild("Creative ", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.6f));
 
 		for (int i = 0; i < Block::BLOCK_COUNT; i++)
 		{

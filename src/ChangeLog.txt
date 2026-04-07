@@ -1,9 +1,10 @@
 // Add Layer Customization into ImGui as a new feature, and add a new demo for it. (PR #5112)
+// Add Different Layers Based on Properties ( Collision Layer, Draw Layer, Background Layer)
 
-// 2024-06-01
+[ Added ]
 
-Bugs:
-	- Found An issue where generating a seed with noise will result in the size of width and hight being 0, which will cause the seed to not generate correctly. (PR #5112)
-	
-	- Found an issue where layer generation is based off of the same seed instead of changing for each seed
-		- Fixed the issue, GameMap initialization on "create" reset all data with "*this = {}"
+[ Fixed ]
+
+[ Updated ]
+
+[ Removed ]

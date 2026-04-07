@@ -13,7 +13,7 @@ struct WorldLayer
 {
 	const char* name = "";
 	Block block = {};
-	Block wall = {};
+	Wall wall = {};
 	int heightStart = 0;
 	int heightEnd = 0;
 	unsigned int height = 0;
@@ -27,7 +27,7 @@ struct GameMap
 	int h = 1;
 
 	std::vector<Block> mapData = {};
-	std::vector<Block> wallData = {};
+	std::vector<Wall> wallData = {};
 	std::vector<WorldLayer> worldLayers = {};
 	unsigned int seed = 0;
 	std::ranlux24_base rng = {};
@@ -36,8 +36,8 @@ struct GameMap
 
 	Block &getBlockUnsave(int x, int y);
 	Block* getBlockSafe(int x, int y);
-	Block &getWallUnsave(int x, int y);
-	Block* getWallSafe(int x, int y);
+	Wall &getWallUnsave(int x, int y);
+	Wall* getWallSafe(int x, int y);
 
 };
 

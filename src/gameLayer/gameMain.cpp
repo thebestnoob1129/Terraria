@@ -16,6 +16,7 @@ struct GameData
 	char saveName[100]{};
 
 	PhysicalEntity player = {};
+	Slime slime = {};
 
 }gameData;
 
@@ -26,6 +27,7 @@ bool showImgui = false;
 bool init_game()
 {
 	assetManager.loadAll();
+	//assetManager.LoadTexturePack(0);
 
 	generateWorld(gameData.gameMap,1000, 500);
 
@@ -33,11 +35,16 @@ bool init_game()
 	gameData.camera.target = Vector2{ 20, 100 };
 	gameData.camera.rotation = 0.0f;
 	gameData.camera.zoom = 100.0f;
+	// Player update
 
 	gameData.player.transform.position = Vector2{ 20, 100 };
 	gameData.player.texture = assetManager.player;
 	gameData.player.transform.w = 0.9f;
 	gameData.player.transform.h = 1.8f;
+
+	gameData.slime.physics.transform.position = Vector2{ 40, 100 };
+	gameData.slime.physics.transform.w = 0.9f;
+	gameData.slime.physics.transform.h = 1.8f;
 
 	return true;
 }
@@ -128,11 +135,21 @@ bool update_game()
 	if (IsKeyDown(KEY_S)) gameData.player.transform.position.y += playerSpeed * deltaTime;
 	if (IsKeyDown(KEY_A)) gameData.player.transform.position.x -= playerSpeed * deltaTime;
 	if (IsKeyDown(KEY_D)) gameData.player.transform.position.x += playerSpeed * deltaTime;
+	if (IsKeyDown(KEY_SPACE)) gameData.player.jump(10);
 
 	gameData.player.applyGravity();
 	gameData.player.updateForces(deltaTime);
 	gameData.player.resolveConstrains(gameData.gameMap);
 	gameData.player.updateFinal();
+
+	std::ranlux24_base rng(std::random_device{}());
+
+	gameData.slime.update(deltaTime, rng, gameData.player.getPosition());
+
+	gameData.slime.physics.applyGravity();
+	gameData.slime.physics.updateForces(deltaTime);
+	gameData.slime.physics.resolveConstrains(gameData.gameMap);
+	gameData.slime.physics.updateFinal();
 
 #pragma endregion
 
@@ -188,7 +205,10 @@ bool update_game()
 		}
 	}
 
-#pragma region Player
+#pragma region Entities
+
+	gameData.slime.render(assetManager);
+
 	// Player
 	Transform2D playerSprite = gameData.player.transform;
 	playerSprite.w = 1;
@@ -199,7 +219,7 @@ bool update_game()
 	DrawTexturePro(
 		assetManager.player,
 		getTextureAtlas(0, 0, 32, 64),
-		playerSprite.getAABB(),
+		getRectangeForEntity(gameData.player.transform, 1, 2),
 		{ 0, 0 },// Origin From Top Left Corner
 		0.0f,
 		WHITE
@@ -294,6 +314,8 @@ bool update_game()
 		ImGui::InputInt("World Width:", &genWorldWidth, 1, 100);
 		ImGui::InputInt("World Height:", &genWorldHeight, 1, 100);
 
+		static int texturePackID = -1;
+
 		if (ImGui::Button("Create New World"))
 		{
 			gameData.gameMap.seed = genSeed;
@@ -303,6 +325,12 @@ bool update_game()
 		if (ImGui::Button("Copy"))
 		{
 			gameData.copyStructure.copyFromMap(gameData.gameMap, gameData.selectionStart, gameData.selectionEnd);
+		}
+
+		ImGui::InputInt("Texture Pack ID:", &texturePackID, 1, 2);
+		if (ImGui::Button("Load Texture Pack"))
+		{
+			assetManager.LoadTexturePack(texturePackID);
 		}
 
 		ImGui::EndChild();

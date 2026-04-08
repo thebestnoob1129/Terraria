@@ -207,6 +207,17 @@ struct PhysicalEntity
 	{
 		lastPosition = transform.position;
 	}
+
+	void jump(float force)
+	{
+		// Acceletation uses deltaTime
+		// Add Force in one Frame Only
+		if (downTouch)
+		{
+			velocity.y -= force;
+		}
+	}
+
 	Vector2 &getPosition()
 	{
 		return transform.position;

@@ -19,6 +19,7 @@
 #include <saveMap.h>
 #include <physics.h>
 #include <structure.h>
+#include <entities/slime.h>
 
 bool init_game();
 bool update_game();

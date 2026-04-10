@@ -2,31 +2,34 @@
 #ifndef SLIME_H
 #define SLIME_H
 
-#include <physics.h>
 #include <raylib.h>
-#include <random>
 #include <entityAnimation.h>
+#include <entity.h>
 
 struct AssetManager;
 
-struct Slime
+struct Slime : Entity
 {
 	PhysicalEntity physics;
 	EntityAnimation animation;
-
+	
 	Slime()
 	{
 		physics.transform.w = 0.9f;
 		physics.transform.h = 0.9f;
+		moveSpeed = 5;
 	}
-
+	
 	Vector2& getPosition()
 	{
 		return physics.transform.position;
 	}
 
-	void render(AssetManager& assetManager);
-	void update(float deltaTime, std::ranlux24_base rng, Vector2 playerPosition);
+	void render(AssetManager& assetManager) override;
+	
+	bool update(float deltaTime, EntityUpdateData entityUpdateData) override;
+
+	int getEntityType() { return EntityType_Slime; }
 
 	enum
 	{

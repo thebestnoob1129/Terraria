@@ -6,6 +6,7 @@ struct GameData
 {
 	GameMap gameMap = {};
 	Camera2D camera = {};
+	bool useGravity = true;
 
 	int creativeSelectedBlock = Block::dirt;
 
@@ -16,13 +17,42 @@ struct GameData
 	char saveName[100]{};
 
 	PhysicalEntity player = {};
-	Slime slime = {};
+	EntityHolder entities;
 
 }gameData;
 
 AssetManager assetManager;
 
 bool showImgui = false;
+
+void spawnSlime(Vector2 position) {
+	// Create a heap-allocated Slime and store it in the entities map as a unique_ptr<Entity>.
+	// This avoids assigning to the non-modifiable rvalue returned by .get().
+	
+	Slime slime;
+
+	slime.physics.teleport(position);
+
+	auto id = gameData.entities.idHolder.getEntityIdAndIncrement();
+	
+	gameData.entities.entities[id] = std::make_unique<Slime>(slime);
+
+}
+
+void spawnDroppedItem(Vector2 position, int type) {
+	DroppedItem droppedItem;
+
+	std::ranlux24_base rng(std::random_device{}());
+
+	Vector2 newPosition = Vector2{ position.x + getRandomFloat(rng), position.y };
+
+	droppedItem.teleport(position);
+	droppedItem.itemType = type;
+
+	auto id = gameData.entities.idHolder.getEntityIdAndIncrement();
+
+	gameData.entities.entities[id] = std::make_unique<DroppedItem>(droppedItem);
+}
 
 bool init_game()
 {
@@ -41,10 +71,8 @@ bool init_game()
 	gameData.player.texture = assetManager.player;
 	gameData.player.transform.w = 0.9f;
 	gameData.player.transform.h = 1.8f;
-
-	gameData.slime.physics.transform.position = Vector2{ 40, 100 };
-	gameData.slime.physics.transform.w = 0.9f;
-	gameData.slime.physics.transform.h = 1.8f;
+	  
+	spawnSlime({ 18, 60 });
 
 	return true;
 }
@@ -106,8 +134,20 @@ bool update_game()
 			if (blockX <= gameData.player.transform.position.x + createDistance && blockX >= gameData.player.transform.position.x - createDistance &&
 				blockY <= gameData.player.transform.position.y + createDistance && blockY >= gameData.player.transform.position.y - createDistance)
 			{
-				auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+				/* Creative Mode Replace Blocks
 				if (b) *b = {};
+				*/
+				auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+				if (b) {
+					if (b->type) {
+						spawnDroppedItem({ static_cast<float>(blockX + 0.5f), static_cast<float>(blockY + 0.5f) }, b->type);
+					}
+
+					*b = {};
+				}
+
+
+
 			}
 			
 		}
@@ -137,19 +177,44 @@ bool update_game()
 	if (IsKeyDown(KEY_D)) gameData.player.transform.position.x += playerSpeed * deltaTime;
 	if (IsKeyDown(KEY_SPACE)) gameData.player.jump(10);
 
-	gameData.player.applyGravity();
+	if (gameData.useGravity) { gameData.player.applyGravity(); }
 	gameData.player.updateForces(deltaTime);
 	gameData.player.resolveConstrains(gameData.gameMap);
 	gameData.player.updateFinal();
 
 	std::ranlux24_base rng(std::random_device{}());
 
-	gameData.slime.update(deltaTime, rng, gameData.player.getPosition());
+	for (auto it = gameData.entities.entities.begin(); it != gameData.entities.entities.end();) {
 
-	gameData.slime.physics.applyGravity();
-	gameData.slime.physics.updateForces(deltaTime);
-	gameData.slime.physics.resolveConstrains(gameData.gameMap);
-	gameData.slime.physics.updateFinal();
+		EntityUpdateData updateData{
+			gameData.player.getPosition(),
+			rng,
+			gameData.entities,
+			it->first,
+		};
+
+		bool shouldKill = false;
+
+		if (!it->second->update(deltaTime, updateData)) {
+			shouldKill = true;
+		}
+
+		if (shouldKill) {
+			it = gameData.entities.entities.erase(it);
+		}
+		else {
+
+			it->second->physics.applyGravity();
+			it->second->physics.updateForces(deltaTime);
+			it->second->physics.resolveConstrains(gameData.gameMap);
+			it->second->physics.updateFinal();
+
+			it++;
+
+		}
+
+	}	
+
 
 #pragma endregion
 
@@ -207,8 +272,9 @@ bool update_game()
 
 #pragma region Entities
 
-	gameData.slime.render(assetManager);
-
+	for (auto& e : gameData.entities.entities) {
+		e.second->render(assetManager);
+	}
 	// Player
 	Transform2D playerSprite = gameData.player.transform;
 	playerSprite.w = 1;
@@ -313,8 +379,18 @@ bool update_game()
 		ImGui::InputInt("Seed:", &genSeed, 1, 100);
 		ImGui::InputInt("World Width:", &genWorldWidth, 1, 100);
 		ImGui::InputInt("World Height:", &genWorldHeight, 1, 100);
-
+		
 		static int texturePackID = -1;
+		ImGui::InputInt("Texture Pack ID:", &texturePackID, 1, 2);
+		if (ImGui::Button("Load Texture Pack"))
+		{
+			assetManager.LoadTexturePack(texturePackID);
+		}
+	
+		if (ImGui::Button("Gravity"))
+		{
+			gameData.useGravity = !gameData.useGravity;
+		}
 
 		if (ImGui::Button("Create New World"))
 		{
@@ -327,11 +403,11 @@ bool update_game()
 			gameData.copyStructure.copyFromMap(gameData.gameMap, gameData.selectionStart, gameData.selectionEnd);
 		}
 
-		ImGui::InputInt("Texture Pack ID:", &texturePackID, 1, 2);
-		if (ImGui::Button("Load Texture Pack"))
+		if (ImGui::Button("Spawn Slime"))
 		{
-			assetManager.LoadTexturePack(texturePackID);
+			spawnSlime({ 18, 60 });
 		}
+
 
 		ImGui::EndChild();
 

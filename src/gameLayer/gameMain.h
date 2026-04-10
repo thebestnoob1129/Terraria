@@ -18,8 +18,10 @@
 #include <structure.h>
 #include <saveMap.h>
 #include <physics.h>
-#include <structure.h>
+#include <entityIdHolder.h>
+
 #include <entities/slime.h>
+#include <entities/droppedItem.h>
 
 bool init_game();
 bool update_game();

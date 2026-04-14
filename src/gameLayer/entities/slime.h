@@ -3,23 +3,23 @@
 #define SLIME_H
 
 #include <raylib.h>
-#include <entityAnimation.h>
 #include <entity.h>
 
 struct AssetManager;
 
 struct Slime : Entity
 {
-	PhysicalEntity physics;
-	EntityAnimation animation;
-	
 	Slime()
 	{
 		physics.transform.w = 0.9f;
 		physics.transform.h = 0.9f;
 		moveSpeed = 5;
+
+		life = getMaxLife();
+
 	}
 	
+
 	Vector2& getPosition()
 	{
 		return physics.transform.position;
@@ -29,18 +29,11 @@ struct Slime : Entity
 	
 	bool update(float deltaTime, EntityUpdateData entityUpdateData) override;
 
-	int getEntityType() { return EntityType_Slime; }
+	int getEntityType() override { return EntityType_Slime; }
 
-	enum
-	{
-		STATE_WONDERING = 0,
-		STATE_CHASING,
-	};
+	int getEntityList() override { return Entity_Slime; };
 
-	int currentState = STATE_WONDERING;
-	float changeStateTimer = 1;
-	float jumpTimer = 0;
-	float moveSpeed;
+	float getMaxLife() override { return 10; };
 };
 
 #endif

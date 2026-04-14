@@ -1,0 +1,208 @@
+#include "developerWindow.h"
+
+#include <assetManager.h>
+#include <worldGenerator.h>
+#include <gameMap.h>
+
+#include "entity.h"
+#include "helpers.h"
+
+void DeveloperWindow::render(GameData gameData)
+{
+	ImGui::Begin("Developer Window");
+
+
+
+	ImGui::End();
+}
+
+struct CameraWindow : Window
+{
+
+	void render(GameData gameData)
+	{
+		ImGui::BeginChild("#World Camera");
+
+		ImGui::SliderFloat("Camera Zoom: ", &gameData.camera.zoom, 1, 200);
+		ImGui::SliderFloat("Camera Speed: ", &gameData.cameraSpeed, 1, 200);
+
+		ImGui::EndChild();
+	}
+
+};
+
+struct PlayerWindow : Window
+{
+	
+	static Vector2 teleportPosition = { 20, 100};
+
+	void render(GameData gameData)
+	{
+		ImGui::BeginPopupContextWindow("#Player Info");
+
+		ImGui::InputFloat2("Player Position:", &gameData.player.physics.transform.position.x);
+		ImGui::InputFloat2("Player Velocity:", &gameData.player.physics.velocity.x);
+		ImGui::InputFloat2("Player Acceleration:", &gameData.player.physics.acceleration.x);
+		ImGui::InputFloat2("Teleport To:", &teleportPosition.x);
+		ImGui::SliderFloat("PLayer Speed", &gameData.player.physics.moveSpeed);
+
+		if (ImGui::Button("Teleport Player"))
+		{
+			gameData.player.teleport(teleportPosition);
+		}
+
+		ImGui::EndPopup();
+	}
+
+};
+
+struct WorldWindow : Window
+{
+
+	static int texturePackID = -1;
+	static int generateSeed = 999;
+	static int generateWidth = 1000;
+	static int generateHeight = 500;
+
+
+	void render(GameData* gameData)
+	{
+		ImGui::BeginChild("#World Info");
+
+		int* genSeed = &gameData.gameMap.seed;
+
+		// World Data
+		ImGui::InputInt("Seed:", genSeed, 1, 100);
+		ImGui::InputInt("World Width:", &gameData.gameMap.width, 1, 100);
+		ImGui::InputInt("World Height:", &gameData.gameMap.height, 1, 100);
+		if (ImGui::Button("Create New World"))
+		{
+			gameData.gameMap.seed = generateSeed;
+			generateWorld(gameData.gameMap, generateWidth, generateHeight);
+		}
+
+		// Texture Data
+		ImGui::InputInt("Texture Pack ID:", &texturePackID, 1, 2);
+		if (ImGui::Button("Load Texture Pack"))
+		{
+			assetManager.LoadTexturePack(texturePackID);
+		}
+
+		// Physics Data
+		if (ImGui::Button("Gravity"))
+		{
+			gameData.useGravity = !gameData.useGravity;
+		}
+
+		// Structure Data
+		if (ImGui::Button("Copy"))
+		{
+			gameData.copyStructure.copyFromMap(gameData.gameMap, gameData.selectionStart, gameData.selectionEnd);
+		}
+
+		ImGui::EndChild();
+	}
+};
+
+struct CreativeWindow : Window
+{
+
+	void render(GameData gameData)
+	{
+		ImGui::BeginChild("#Creative Window");
+
+		for (int i = 0; i < Block::BLOCK_COUNT; i++)
+		{
+			auto atlas = getTextureAtlas(i, 0);
+			atlas.x /= assetManager.textures.width;
+			atlas.width /= assetManager.textures.width;
+			atlas.y /= assetManager.textures.height;
+			atlas.height /= assetManager.textures.height;
+
+			ImGui::PushID(i);
+
+			std::string str = std::to_string(i);
+			const char* char_ptr = str.c_str();
+
+			ImTextureID tex = static_cast<ImTextureID>(static_cast<intptr_t>(assetManager.textures.id));
+			if (ImGui::ImageButton(char_ptr, tex,
+				{ 35, 35 }, { atlas.x, atlas.y },
+				{ atlas.x + atlas.width, atlas.y + atlas.height }))
+			{
+				gameData.creativeSelectedBlock = i;
+			}
+
+			ImGui::PopID();
+
+			if (i % 10 != 0)
+			{
+				ImGui::SameLine();
+			}
+
+		}
+
+		ImGui::EndChild();
+	}
+};
+
+struct EntityWindow : Window
+{
+	
+	void render(GameData gameData)
+	{
+		ImGui::BeginChild("#Creative Window");
+		
+		if (ImGui::Button("Spawn Random Entity"))
+		{
+			//spawnRandomEnemy(gameData.player.getPosition());
+		}
+		if (ImGui::Button("Hurt Random Entity"))
+		{
+			for (Entity& e : gameData.entities.entities)
+			{
+				if (e.second->getEntityType() == EntityType_Slime)
+				{
+					e.second->OnHit(1, RED);
+					break;
+				}
+			}
+		}
+
+		ImGui::EndChild();
+	}
+
+};
+
+struct SaveWindow : Window
+{
+	
+	void render(GameData gameData)
+	{
+		ImGui::BeginChild("#Creative Window");
+
+		ImGui::InputText("Save Name", gameData.saveName, sizeof(gameData.saveName));
+
+		if (ImGui::Button("Save To File"))
+		{
+			std::string path = RESOURCES_PATH "structures/";
+			path += gameData.saveName;
+			path += ".bin";
+
+			saveBlockDataToFile(gameData.copyStructure.mapData,
+				gameData.copyStructure.w, gameData.copyStructure.h,
+				path.c_str());
+		}
+		if (ImGui::Button("Load To File"))
+		{
+			std::string path = RESOURCES_PATH "structures/";
+			path += gameData.saveName;
+			path += ".bin";
+
+			loadBlockDataFromFile(gameData.copyStructure.mapData,
+				gameData.copyStructure.w, gameData.copyStructure.h,
+				path.c_str());
+		}
+		ImGui::EndChild();
+	}
+
+};

@@ -1,43 +1,42 @@
 #include "gameMain.h"
 
+#include "settings.h"
+
 // Add Trees
 
 struct GameData
 {
 	GameMap gameMap = {};
+
+	// Camera Information
 	Camera2D camera = {};
+	int cameraSpeed = 10;
+
+	// World Information
 	bool useGravity = true;
 
+	// Creative Information
 	int creativeSelectedBlock = Block::dirt;
-
 	Structure copyStructure = {};
 	Vector2 selectionStart = {};
 	Vector2 selectionEnd = {};
 
+	// Save Information
 	char saveName[100]{};
 
-	PhysicalEntity player = {};
+	// Entity Information
+	Player player = {};
 	EntityHolder entities;
+	int maxEnemies = 50;
+	int spawnRange = 50; // Blocks
+	float spawnTimer = 10;
 
 }gameData;
 
 AssetManager assetManager;
+DeveloperWindow devWindow;
 
 bool showImgui = false;
-
-void spawnSlime(Vector2 position) {
-	// Create a heap-allocated Slime and store it in the entities map as a unique_ptr<Entity>.
-	// This avoids assigning to the non-modifiable rvalue returned by .get().
-	
-	Slime slime;
-
-	slime.physics.teleport(position);
-
-	auto id = gameData.entities.idHolder.getEntityIdAndIncrement();
-	
-	gameData.entities.entities[id] = std::make_unique<Slime>(slime);
-
-}
 
 void spawnDroppedItem(Vector2 position, int type) {
 	DroppedItem droppedItem;
@@ -46,7 +45,7 @@ void spawnDroppedItem(Vector2 position, int type) {
 
 	Vector2 newPosition = Vector2{ position.x + getRandomFloat(rng), position.y };
 
-	droppedItem.teleport(position);
+	droppedItem.teleport(newPosition);
 	droppedItem.itemType = type;
 
 	auto id = gameData.entities.idHolder.getEntityIdAndIncrement();
@@ -54,8 +53,85 @@ void spawnDroppedItem(Vector2 position, int type) {
 	gameData.entities.entities[id] = std::make_unique<DroppedItem>(droppedItem);
 }
 
+void spawnRandomEnemy(Vector2 playerPosition)
+{
+	std::cout << "Spawn Random Entity \n";
+	// Despawn Entity that is furthest Away From Player
+	if (gameData.entities.entities.size() >= gameData.maxEnemies)
+	{
+		// Despawn Entities outside of range
+		int furthestDistance = 0;
+		Entity* ent = {};
+		int id = 0;
+
+		for (auto& e : gameData.entities.entities) // Scan For Entities
+		{
+			if ( Vector2Distance(playerPosition, e.second->getPosition()) >= furthestDistance) // Compare Distance To Last Distance
+			{
+				std::cout << "Despawn Entity \n";
+				ent = e.second.get();
+				id = e.first;
+				furthestDistance = Vector2Distance(playerPosition, e.second->getPosition());
+			}
+		}
+
+		// Despawn Entity
+		if (ent != nullptr) 
+		{
+			ent->life = -1;
+			// Get Entity Id
+			gameData.entities.entities.erase(id);
+		}
+	}
+
+    // Spawn Entity In New Range
+	std::ranlux24_base rng(std::random_device{}());
+
+	// Choose a random entity type from the EntityList (skip player at 0)
+	int chosen = getRandomInt(rng, Entity_Slime, ENTITY_COUNT - 1);
+
+	// Create the entity based on chosen type
+	std::unique_ptr<Entity> newEntity;
+	switch (chosen)
+	{
+	case Entity_Slime:
+		newEntity = std::make_unique<Slime>();
+		break;
+	case Entity_BlueSlime:
+		newEntity = std::make_unique<BlueSlime>();
+		break;
+	case Entity_Mummy:
+		newEntity = std::make_unique<Mummy>();
+		break;
+	case Entity_Zombie:
+		newEntity = std::make_unique<Zombie>();
+		break;
+	case Entity_Zombie_Eskimo:
+		newEntity = std::make_unique<EskimoZombie>();
+	default:
+		newEntity = std::make_unique<Slime>();
+		break;
+	}
+
+	// Get New Spawn Location (random offset from player)
+	Vector2 spawnPosition = Vector2{
+		static_cast<float>(playerPosition.x + getRandomInt(rng, -gameData.spawnRange, gameData.spawnRange)),
+		static_cast<float>(playerPosition.y + getRandomInt(rng, -gameData.spawnRange, gameData.spawnRange))
+	};
+
+	// Teleport the new entity to spawn position and add to holder
+	newEntity->physics.teleport(spawnPosition);
+
+	auto id = gameData.entities.idHolder.getEntityIdAndIncrement();
+	gameData.entities.entities[id] = std::move(newEntity);
+
+}
+
 bool init_game()
 {
+	Audio::init();
+	loadSettings();
+
 	assetManager.loadAll();
 	//assetManager.LoadTexturePack(0);
 
@@ -67,18 +143,20 @@ bool init_game()
 	gameData.camera.zoom = 100.0f;
 	// Player update
 
-	gameData.player.transform.position = Vector2{ 20, 100 };
-	gameData.player.texture = assetManager.player;
-	gameData.player.transform.w = 0.9f;
-	gameData.player.transform.h = 1.8f;
-	  
-	spawnSlime({ 18, 60 });
+	gameData.player.physics.transform.position = Vector2{ 20, 100 };
+	gameData.player.physics.texture = assetManager.player;
+	gameData.player.physics.transform.w = 0.9f;
+	gameData.player.physics.transform.h = 1.8f;
+
+	spawnRandomEnemy(gameData.player.getPosition());
 
 	return true;
 }
 
 bool update_game()
 {
+	Audio::update();
+	updateSettings(); // Automatically Change Settings if world Changed | Or Use On Apply Settings;
 	float deltaTime = GetFrameTime();
 	if (deltaTime > 1.f / 5) { deltaTime = 1 / 5.f; }
 
@@ -90,13 +168,45 @@ bool update_game()
 
 #pragma region Camera Movement
 	static float cameraSpeed = 7;
-	/*
-	if (IsKeyDown(KEY_UP)) gameData.camera.target.y -= cameraSpeed * deltaTime;
-	if (IsKeyDown(KEY_DOWN)) gameData.camera.target.y += cameraSpeed * deltaTime;
-	if (IsKeyDown(KEY_LEFT)) gameData.camera.target.x -= cameraSpeed * deltaTime;
-	if (IsKeyDown(KEY_RIGHT)) gameData.camera.target.x += cameraSpeed * deltaTime;
-	*/
-	gameData.camera.target = gameData.player.transform.position;
+	gameData.camera.target = gameData.player.physics.transform.position;
+
+	// Clamp Camera
+	{
+		float zoom = gameData.camera.zoom;
+
+		float screenWidth = GetScreenWidth();
+		float screenHeight = GetScreenHeight();
+
+		float halfViewWidth = (screenWidth * 0.5f) / zoom;
+		float halfViewHeight = (screenHeight * 0.5f) / zoom;
+
+		float minX = halfViewWidth;
+		float maxX = gameData.gameMap.w - halfViewWidth;
+		float minY = halfViewHeight;
+		float maxY = gameData.gameMap.h - halfViewHeight;
+
+		gameData.camera.target.x = Clamp(gameData.camera.target.x, minX, maxX);
+		gameData.camera.target.y = Clamp(gameData.camera.target.y, minY, maxY);
+
+		if (maxX < minX)
+		{
+			gameData.camera.target.x = gameData.gameMap.w * 0.5f;
+		}
+		else
+		{
+			gameData.camera.target.x = Clamp(gameData.camera.target.x, minX, maxX);
+		}
+
+		if (maxY < minY)
+		{
+			gameData.camera.target.y = gameData.gameMap.h * 0.5f;
+		}
+		else
+		{
+			gameData.camera.target.y = Clamp(gameData.camera.target.y, minY, maxX);
+		}
+
+	}
 
 #pragma endregion
 
@@ -131,8 +241,8 @@ bool update_game()
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 		{
-			if (blockX <= gameData.player.transform.position.x + createDistance && blockX >= gameData.player.transform.position.x - createDistance &&
-				blockY <= gameData.player.transform.position.y + createDistance && blockY >= gameData.player.transform.position.y - createDistance)
+			if (blockX <= gameData.player.physics.transform.position.x + createDistance && blockX >= gameData.player.physics.transform.position.x - createDistance &&
+				blockY <= gameData.player.physics.transform.position.y + createDistance && blockY >= gameData.player.physics.transform.position.y - createDistance)
 			{
 				/* Creative Mode Replace Blocks
 				if (b) *b = {};
@@ -140,22 +250,18 @@ bool update_game()
 				auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
 				if (b) {
 					if (b->type) {
-						spawnDroppedItem({ static_cast<float>(blockX + 0.5f), static_cast<float>(blockY + 0.5f) }, b->type);
+						spawnDroppedItem({ static_cast<float>(blockX + 0.5f), static_cast<float>(blockY + 0.5f) }, Item::healthPotion);
 					}
 
 					*b = {};
 				}
-
-
-
 			}
-			
 		}
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 		{
-			if (blockX <= gameData.player.transform.position.x + createDistance && blockX >= gameData.player.transform.position.x - createDistance &&
-				blockY <= gameData.player.transform.position.y + createDistance && blockY >= gameData.player.transform.position.y - createDistance)
+			if (blockX <= gameData.player.physics.transform.position.x + createDistance && blockX >= gameData.player.physics.transform.position.x - createDistance &&
+				blockY <= gameData.player.physics.transform.position.y + createDistance && blockY >= gameData.player.physics.transform.position.y - createDistance)
 			{
 				auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
 				if (b) b->type = gameData.creativeSelectedBlock;
@@ -171,21 +277,62 @@ bool update_game()
 #pragma region Entities
 	float playerSpeed = 7;
 
-	if (IsKeyDown(KEY_W)) gameData.player.transform.position.y -= playerSpeed * deltaTime;
-	if (IsKeyDown(KEY_S)) gameData.player.transform.position.y += playerSpeed * deltaTime;
-	if (IsKeyDown(KEY_A)) gameData.player.transform.position.x -= playerSpeed * deltaTime;
-	if (IsKeyDown(KEY_D)) gameData.player.transform.position.x += playerSpeed * deltaTime;
-	if (IsKeyDown(KEY_SPACE)) gameData.player.jump(10);
+	auto updateEntityPhysics = [&](auto& entity, bool applyGravity = true)
+	{
+		if (applyGravity) { entity.physics.applyGravity(); }
 
-	if (gameData.useGravity) { gameData.player.applyGravity(); }
-	gameData.player.updateForces(deltaTime);
-	gameData.player.resolveConstrains(gameData.gameMap);
-	gameData.player.updateFinal();
+		entity.physics.updateForces(deltaTime);
+		entity.physics.resolveConstrains(gameData.gameMap);
+		entity.physics.updateFinal();
+	};
+
+	// Player Controller 
+
+	if (IsKeyDown(KEY_W)) gameData.player.physics.transform.position.y -= playerSpeed * deltaTime;
+	if (IsKeyDown(KEY_S)) gameData.player.physics.transform.position.y += playerSpeed * deltaTime;
+	if (IsKeyDown(KEY_A)) gameData.player.physics.transform.position.x -= playerSpeed * deltaTime;
+	if (IsKeyDown(KEY_D)) gameData.player.physics.transform.position.x += playerSpeed * deltaTime;
+	if (IsKeyDown(KEY_SPACE)) gameData.player.physics.jump(10);
+
+	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		int attackRange = 2;
+
+		for (auto& e : gameData.entities.entities)
+		{
+			// If within attack range
+			if (blockX <= e.second->physics.transform.position.x + attackRange && blockX >= e.second->physics.transform.position.x - attackRange &&
+				blockY <= e.second->physics.transform.position.y + attackRange && blockY >= e.second->physics.transform.position.y - attackRange)
+			{
+				if (e.second->getEntityType() == EntityType_DroppedItem) { break; }
+				std::cout << "Attempt Attack: " << 3 << "\n";
+				e.second->OnHit(3);
+			}
+		}
+	}
+
+	updateEntityPhysics(gameData.player, gameData.useGravity);
+
+	// Entity Controller
 
 	std::ranlux24_base rng(std::random_device{}());
 
+	// Spawn Random Entites
+
+	if (gameData.spawnTimer > 0.0f)
+	{
+		gameData.spawnTimer -= deltaTime;
+		if (gameData.spawnTimer <= 0.0f)
+		{
+			spawnRandomEnemy(gameData.player.getPosition());
+			gameData.spawnTimer = 10;
+		}
+	}
+
+
 	for (auto it = gameData.entities.entities.begin(); it != gameData.entities.entities.end();) {
 
+		// Update Entity Data
 		EntityUpdateData updateData{
 			gameData.player.getPosition(),
 			rng,
@@ -195,22 +342,19 @@ bool update_game()
 
 		bool shouldKill = false;
 
-		if (!it->second->update(deltaTime, updateData)) {
+		// Remove Entity From Container
+		if (!it->second->update(deltaTime, updateData) || it->second->life <= 0) {
 			shouldKill = true;
 		}
 
 		if (shouldKill) {
+			if (it->second->getEntityType() != EntityType_DroppedItem) { spawnDroppedItem(it->second->getPosition(), it->second->getDrop()); };
 			it = gameData.entities.entities.erase(it);
 		}
 		else {
-
-			it->second->physics.applyGravity();
-			it->second->physics.updateForces(deltaTime);
-			it->second->physics.resolveConstrains(gameData.gameMap);
-			it->second->physics.updateFinal();
-
+			// Update Entity Physics
+			updateEntityPhysics(*it->second, gameData.useGravity);
 			it++;
-
 		}
 
 	}	
@@ -276,16 +420,16 @@ bool update_game()
 		e.second->render(assetManager);
 	}
 	// Player
-	Transform2D playerSprite = gameData.player.transform;
+	Transform2D playerSprite = gameData.player.physics.transform;
 	playerSprite.w = 1;
 	playerSprite.h = 2;
 
-	playerSprite.position.y -= (playerSprite.h - gameData.player.transform.h) / 2;
+	playerSprite.position.y -= (playerSprite.h - gameData.player.physics.transform.h) / 2;
 
 	DrawTexturePro(
 		assetManager.player,
 		getTextureAtlas(0, 0, 32, 64),
-		getRectangeForEntity(gameData.player.transform, 1, 2),
+		getRectangleForEntity(gameData.player.physics.transform, 1, 2),
 		{ 0, 0 },// Origin From Top Left Corner
 		0.0f,
 		WHITE
@@ -329,7 +473,7 @@ bool update_game()
 		DrawRectangleLinesEx(rect, 0.1f, { 53, 86, 223, 255 });
 
 		// Player Outline
-		DrawRectangleLinesEx(gameData.player.transform.getAABB(), 0.1f, Color{ 52, 164, 39, 255 });
+		DrawRectangleLinesEx(gameData.player.physics.transform.getAABB(), 0.1f, Color{ 52, 164, 39, 255 });
 
 	}
 
@@ -337,6 +481,35 @@ bool update_game()
 
 	EndMode2D();
 #pragma region Imgui
+	/* Developer Window Implementaion
+	if (showImgui)
+	{
+		DeveloperWindow devWindow;
+
+		devWindow.render(gameData);
+		
+		if (ImGui::Button("#Camera Window"))
+		{
+			devWindow.camWindow = !devWindow.camWindow;
+		}
+		if (ImGui::Button("#Player Window"))
+		{
+			devWindow.playerWindow = !devWindow.playerWindow;
+		}
+
+		for (auto &w : devWindow.windows)
+		{	
+			if (w.enabled)
+			{
+				w.render(gameData);
+			}
+		}
+
+	}
+	*/
+
+	// Normal Imgui Implementation
+	
 	if (showImgui) {
 
 		ImGui::Begin("Game Controller");
@@ -346,22 +519,23 @@ bool update_game()
 		static int genSeed = 0;
 
 		// Camera Data
-		ImGui::BeginChild("Camera Data", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.2f));
+		ImGui::BeginChild("Camera Data");//, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.2f));
 
 		ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
 		ImGui::SliderFloat("Camera speed:", &cameraSpeed, 10, 150);
 
 		ImGui::EndChild();
+		ImGui::Separator();
 
-		ImGui::BeginChild("Player Data", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.3f));
+		ImGui::BeginChild("Player Data");// , ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.3f));
 
 		Vector2 teleportPosition = { 20, 100 };
 
-		ImGui::InputFloat2("Player Position:", &gameData.player.transform.position.x);
-		ImGui::InputFloat2("Player Velocity:", &gameData.player.velocity.x);
-		ImGui::InputFloat2("Player Acceleration:", &gameData.player.acceleration.x);
+		ImGui::InputFloat2("Player Position:", &gameData.player.physics.transform.position.x);
+		ImGui::InputFloat2("Player Velocity:", &gameData.player.physics.velocity.x);
+		ImGui::InputFloat2("Player Acceleration:", &gameData.player.physics.acceleration.x);
 		ImGui::InputFloat2("Teleport To:", &teleportPosition.x);
-		
+
 		if (ImGui::Button("Teleport Player"))
 		{
 			gameData.player.teleport(teleportPosition);
@@ -374,19 +548,19 @@ bool update_game()
 		ImGui::Separator();
 
 		// World Data
-		ImGui::BeginChild("World Data", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.4f));
+		ImGui::BeginChild("World Data");// , ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.4f));
 
 		ImGui::InputInt("Seed:", &genSeed, 1, 100);
 		ImGui::InputInt("World Width:", &genWorldWidth, 1, 100);
 		ImGui::InputInt("World Height:", &genWorldHeight, 1, 100);
-		
+
 		static int texturePackID = -1;
 		ImGui::InputInt("Texture Pack ID:", &texturePackID, 1, 2);
 		if (ImGui::Button("Load Texture Pack"))
 		{
 			assetManager.LoadTexturePack(texturePackID);
 		}
-	
+
 		if (ImGui::Button("Gravity"))
 		{
 			gameData.useGravity = !gameData.useGravity;
@@ -395,7 +569,7 @@ bool update_game()
 		if (ImGui::Button("Create New World"))
 		{
 			gameData.gameMap.seed = genSeed;
-			generateWorld(gameData.gameMap,genWorldWidth, genWorldHeight);
+			generateWorld(gameData.gameMap, genWorldWidth, genWorldHeight);
 		}
 
 		if (ImGui::Button("Copy"))
@@ -403,16 +577,31 @@ bool update_game()
 			gameData.copyStructure.copyFromMap(gameData.gameMap, gameData.selectionStart, gameData.selectionEnd);
 		}
 
-		if (ImGui::Button("Spawn Slime"))
+		if (ImGui::Button("Spawn Entity"))
 		{
-			spawnSlime({ 18, 60 });
+			spawnRandomEnemy(gameData.player.getPosition());
+		}
+
+
+		if (ImGui::Button("Hurt Slime"))
+		{
+			for (auto& e : gameData.entities.entities)
+			{
+				if (e.second->getEntityType() == EntityType_Slime)
+				{
+					e.second->OnHit(1, RED);
+					break;
+				}
+			}
 		}
 
 
 		ImGui::EndChild();
 
-		ImGui::BeginChild("Save Data", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.5f));
-		
+		ImGui::Separator();
+
+		ImGui::BeginChild("Save Data");// , ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.5f));
+
 		ImGui::InputText("Save Name", gameData.saveName, sizeof(gameData.saveName));
 
 		if (ImGui::Button("Save To File"))
@@ -435,12 +624,22 @@ bool update_game()
 				gameData.copyStructure.w, gameData.copyStructure.h,
 				path.c_str());
 		}
+		
+		if (ImGui::Button("Save Settings"))
+		{
+			saveSettings();
+		}
+		
+		if (ImGui::Button("Load Settings"))
+		{
+			loadSettings();
+		}
 
 		ImGui::EndChild();
 
 		ImGui::Separator();
 
-		ImGui::BeginChild("Creative ", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.6f));
+		ImGui::BeginChild("Creative ");// , ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.6f));
 
 		for (int i = 0; i < Block::BLOCK_COUNT; i++)
 		{
@@ -457,8 +656,8 @@ bool update_game()
 
 			ImTextureID tex = static_cast<ImTextureID>(static_cast<intptr_t>(assetManager.textures.id));
 			if (ImGui::ImageButton(char_ptr, tex,
-				{35, 35}, {atlas.x, atlas.y},
-				{atlas.x + atlas.width, atlas.y + atlas.height}))
+				{ 35, 35 }, { atlas.x, atlas.y },
+				{ atlas.x + atlas.width, atlas.y + atlas.height }))
 			{
 				gameData.creativeSelectedBlock = i;
 			}
@@ -471,42 +670,37 @@ bool update_game()
 			}
 
 		}
-		for (int i = 0; i < Block::BLOCK_COUNT; i++)
+
+		ImGui::EndChild();
+
+		ImGui::Separator();
+
+		ImGui::BeginChild("Audio ");// , ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.6f));
+
+		ImGui::SliderFloat("Master Volume", &getSettings().masterVolume, 0, 1);
+		ImGui::SliderFloat("Sound Volume", &getSettings().soundsVolume, 0, 1);
+		ImGui::SliderFloat("Music Volume", &getSettings().musicVolume, 0, 1);
+
+		if (ImGui::Button("Play sound"))
 		{
-			auto atlas = getTextureAtlas(i, 0);
-			atlas.x /= assetManager.textures.width;
-			atlas.width /= assetManager.textures.width;
-			atlas.y /= assetManager.textures.height;
-			atlas.height /= assetManager.textures.height;
-
-			ImGui::PushID(i);
-
-			std::string str = std::to_string(i);
-			const char* char_ptr = str.c_str();
-
-			ImTextureID tex = static_cast<ImTextureID>(static_cast<intptr_t>(assetManager.textures.id));
-			if (ImGui::ImageButton(char_ptr, tex,
-				{35, 35}, {atlas.x, atlas.y},
-				{atlas.x + atlas.width, atlas.y + atlas.height}))
-			{
-				gameData.creativeSelectedBlock = i;
-			}
-
-			ImGui::PopID();
-
-			if (i % 10 != 0)
-			{
-				ImGui::SameLine();
-			}
-
+			Audio::playSound(Audio::placeBlock);
 		}
 
+		if (ImGui::Button("Play Forest Music"))
+		{
+			Audio::playMusic(Audio::musicForest);
+		}
 
+		if (ImGui::Button("Play Desert Music"))
+		{
+			Audio::playMusic(Audio::musicDesert);
+		}
 
 		ImGui::EndChild();
 
 		ImGui::End();
 	}
+	
 
 #pragma endregion
 	DrawFPS(10, 10);
@@ -516,7 +710,7 @@ bool update_game()
 
 void close_game()
 {
-
+	saveSettings();
 	gameData = {};
 
 	std::cout << "Close Game \n";

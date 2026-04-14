@@ -7,7 +7,10 @@
 #include <raymath.h>
 #include <string>
 #include <limits>
+#include <imgui_internal.h>
 
+// Game Layer
+#include <developerWindow.h>
 #include <randomStuff.h>
 #include <raylib.h>
 #include <asserts.h>
@@ -18,10 +21,19 @@
 #include <structure.h>
 #include <saveMap.h>
 #include <physics.h>
-#include <entityIdHolder.h>
+#include <items.h>
+#include <audio.h>
+#include <settings.h>
 
+// Entities
+#include <entity.h>
 #include <entities/slime.h>
 #include <entities/droppedItem.h>
+#include <entities/blueSlime.h>
+#include <entities/mummy.h>
+#include <entities/zombie.h>
+#include "entities/eskimo_zombie.h"
+#include <player.h>
 
 bool init_game();
 bool update_game();

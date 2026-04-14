@@ -153,17 +153,18 @@ struct Transform2D
 
 struct PhysicalEntity
 {
-	Transform2D transform;
-	Texture2D texture;
+	Transform2D transform = {0, 0, 0, 0};
+	Texture2D texture = {};
 	Vector2 lastPosition = {};
 
 	Vector2 velocity = {};
 	Vector2 acceleration = {};
+	float moveSpeed = 1;
 
-	bool upTouch;
-	bool downTouch;
-	bool leftTouch;
-	bool rightTouch;
+	bool upTouch = {};
+	bool downTouch = {};
+	bool leftTouch = {};
+	bool rightTouch = {};
 
 	void teleport(Vector2 newPosition)
 	{

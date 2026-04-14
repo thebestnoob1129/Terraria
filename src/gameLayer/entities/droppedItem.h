@@ -2,15 +2,12 @@
 #ifndef DROPPEDITEM_H
 #define DROPPEDITEM_H
 
-#include <physics.h>
-#include <raylib.h>
-#include <random>
 #include <entity.h>
 
-struct AssetManager;
-struct EntityUpdateData;
 
-struct DroppedItem : public Entity 
+struct AssetManager;
+
+struct DroppedItem : public Entity
 {
 	DroppedItem() {
 		physics.transform.w = 0.8f;
@@ -25,6 +22,10 @@ struct DroppedItem : public Entity
 	bool update(float deltaTime, EntityUpdateData entityUpdateData);
 
 	int getEntityType() { return EntityType_DroppedItem; }
+
+	int getEntityList() override { return Entity_DroppedItem; }
+
+	float getMaxLife() override { return 1.f; }
 
 	int getMaxItems(int itemType) {
 

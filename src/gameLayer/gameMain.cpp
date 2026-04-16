@@ -1,7 +1,5 @@
 #include "gameMain.h"
 
-#include "settings.h"
-
 // Add Trees
 
 struct GameData
@@ -10,10 +8,12 @@ struct GameData
 
 	// Camera Information
 	Camera2D camera = {};
-	int cameraSpeed = 10;
+	float cameraSpeed = 10;
 
 	// World Information
+	DrawBackground background;
 	bool useGravity = true;
+	float currentTime;
 
 	// Creative Information
 	int creativeSelectedBlock = Block::dirt;
@@ -38,6 +38,8 @@ DeveloperWindow devWindow;
 
 bool showImgui = false;
 
+// Functions ***************
+#pragma region Functions
 void spawnDroppedItem(Vector2 position, int type) {
 	DroppedItem droppedItem;
 
@@ -109,7 +111,6 @@ void spawnRandomEnemy(Vector2 playerPosition)
 	case Entity_Zombie_Eskimo:
 		newEntity = std::make_unique<EskimoZombie>();
 	default:
-		newEntity = std::make_unique<Slime>();
 		break;
 	}
 
@@ -126,6 +127,9 @@ void spawnRandomEnemy(Vector2 playerPosition)
 	gameData.entities.entities[id] = std::move(newEntity);
 
 }
+
+#pragma endregion
+// ***************** Game Loop 
 
 bool init_game()
 {
@@ -160,14 +164,14 @@ bool update_game()
 	float deltaTime = GetFrameTime();
 	if (deltaTime > 1.f / 5) { deltaTime = 1 / 5.f; }
 
-	gameData.camera.offset = Vector2{ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
+	// Game Parameters
 
+	gameData.camera.offset = Vector2{ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
 	ClearBackground({ 75, 75, 150, 255 });
 
 	if (IsKeyPressed(KEY_F10)) { showImgui = !showImgui; }
 
 #pragma region Camera Movement
-	static float cameraSpeed = 7;
 	gameData.camera.target = gameData.player.physics.transform.position;
 
 	// Clamp Camera
@@ -250,7 +254,7 @@ bool update_game()
 				auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
 				if (b) {
 					if (b->type) {
-						spawnDroppedItem({ static_cast<float>(blockX + 0.5f), static_cast<float>(blockY + 0.5f) }, Item::healthPotion);
+						spawnDroppedItem({ static_cast<float>(blockX + 0.5f), static_cast<float>(blockY + 0.5f) }, b->type);
 					}
 
 					*b = {};
@@ -348,7 +352,7 @@ bool update_game()
 		}
 
 		if (shouldKill) {
-			if (it->second->getEntityType() != EntityType_DroppedItem) { spawnDroppedItem(it->second->getPosition(), it->second->getDrop()); };
+			if (it->second->getEntityType() != EntityType_DroppedItem) { spawnDroppedItem(it->second->getPosition(), it->second->getDrop()); }
 			it = gameData.entities.entities.erase(it);
 		}
 		else {
@@ -362,6 +366,63 @@ bool update_game()
 
 #pragma endregion
 
+#pragma region Time Cycle
+
+	float cycle = getCycleTime(60 * 5);
+	float dayFactor = getDayFactor(cycle);
+
+	// Get each background needed for day / night
+	
+	
+	if (gameData.player.getPosition().y > 200)
+	{
+		// Draw Cave Background
+		gameData.background.draw(assetManager.caveBG, deltaTime, gameData.camera, gameData.gameMap.getMapSize());
+	}
+	else // Normal Day Cycle
+	{
+
+		// Night
+		gameData.background.draw(assetManager.nightSky, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, dayFactor);
+		gameData.background.draw(assetManager.stars, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, dayFactor);
+		gameData.background.draw(assetManager.moon, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, dayFactor);
+		gameData.background.draw(assetManager.cloudsNight, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, dayFactor);
+
+		// Day
+		gameData.background.draw(assetManager.sky, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1 - dayFactor);
+		gameData.background.draw(assetManager.sun, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1 - dayFactor);
+		gameData.background.draw(assetManager.clouds, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1 - dayFactor);
+		/*
+		// Draw Sky ( immediate Switch
+		if (dayFactor <= 0.5f) // night
+		{
+			gameData.background.draw(assetManager.nightSky, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, scaled);
+			gameData.background.draw(assetManager.stars, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, scaled);
+			gameData.background.draw(assetManager.moon, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, scaled);
+			gameData.background.draw(assetManager.cloudsNight, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, scaled);
+		}
+		else  // night
+		{
+			gameData.background.draw(assetManager.sky, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1-scaled);
+			gameData.background.draw(assetManager.sun, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1-scaled);
+			gameData.background.draw(assetManager.clouds, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1-scaled);
+		}
+		*/
+
+
+	}
+	
+	// Change background based on day factor time with alpha
+
+	// Load area background based on current world layer location with transition smoothness
+
+	// changed the background color
+	Color night = { 10, 10, 40, 255 };
+	Color day = { 135, 206, 235, 255 };
+
+
+
+#pragma endregion
 	BeginMode2D(gameData.camera);
 
 #pragma region Occulating Viewport 2D
@@ -411,6 +472,15 @@ bool update_game()
 					0.0f, // Rotation
 					WHITE);// Tint
 			}
+		}
+	}
+
+	for (int i = 1; i < gameData.gameMap.h; i *= 50)
+	{
+		for (int x = 0; x < gameData.gameMap.w; x++)
+		{
+			auto b = gameData.gameMap.getBlockSafe(x, i);
+			if (b) { b->type = Block::goldBlock; }
 		}
 	}
 
@@ -522,7 +592,7 @@ bool update_game()
 		ImGui::BeginChild("Camera Data");//, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.2f));
 
 		ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
-		ImGui::SliderFloat("Camera speed:", &cameraSpeed, 10, 150);
+		ImGui::SliderFloat("Camera speed:", &gameData.cameraSpeed, 10, 150);
 
 		ImGui::EndChild();
 		ImGui::Separator();

@@ -8,6 +8,8 @@
 #include <string>
 #include <limits>
 #include <imgui_internal.h>
+#include <thread>
+#include <chrono>
 
 // Game Layer
 #include <developerWindow.h>
@@ -24,6 +26,7 @@
 #include <items.h>
 #include <audio.h>
 #include <settings.h>
+#include <drawBackground.h>
 
 // Entities
 #include <entity.h>

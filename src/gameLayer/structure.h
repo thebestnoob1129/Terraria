@@ -6,8 +6,6 @@
 #include <vector>
 #include <gameMap.h>
 #include <blocks.h>
-#include <randomStuff.h>
-#include <iostream>
 
 struct Structure
 {

@@ -145,29 +145,19 @@ namespace Audio
 			soundsPlayed.pop_back();
 		}
 
-		for ( int i = 0; i < soundsPlayed.size(); i++)
+		for ( size_t i = 0; i < soundsPlayed.size(); i++)
 		{
 			auto s = soundsPlayed[i];
 			if (IsSoundPlaying(s))
 			{
-				std::cout << IsSoundPlaying(s);
+				//std::cout << IsSoundPlaying(s);
 			}
 			else
 			{
-				soundsPlayed.erase(soundsPlayed.begin() + i);
+				soundsPlayed.erase(soundsPlayed.begin() + static_cast<int>(i));
 			}
 
 		}
-		/*
-		*/
-		// Get All sounds playing
-
-		// Check if more than max sounds
-
-		// if more than max sounds, remove last sound that != music
-
-		// loop over all sounds playing
-
 	}
 
 	void stopAllMusic()

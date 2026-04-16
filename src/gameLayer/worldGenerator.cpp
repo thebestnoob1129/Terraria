@@ -49,6 +49,20 @@ void generateWorld(GameMap& gameMap, int w, int h)
 		}
 	}
 
+	for (int i = 0; i < gameMap.w * getRandomFloat(rng, 0.3f, 0.8f); i++)
+	{
+		float x = getRandomInt(rng, 10, w - 10);
+		float y = getRandomInt(rng, 51, h - 10);
+
+		int wormLength = getRandomInt(rng, getRandomInt(rng, 100, w / 4), getRandomInt(rng, 100, h / 4));
+
+
+		if (getRandomChance(rng, 0.8f))
+		{
+			generateWorm(gameMap, x, y, wormLength, 5, false);
+		}
+	}
+
 	// Structures
 
 	FastNoiseSIMD::FreeNoiseSet(caveNoise);
@@ -143,8 +157,6 @@ void generateCave(GameMap &gameMap, int octaves, float frequency, float radius)
 	{
 		for (int y = 0; gameMap.h; y++)
 		{
-
-
 			if (getCaveNoise(x, y) < 0.5) // Percent of World
 			{
 				auto b = gameMap.getBlockUnsave(x, y);
@@ -159,7 +171,7 @@ void generateCave(GameMap &gameMap, int octaves, float frequency, float radius)
 
 }
 
-void generateWorm(GameMap& gameMap, float x, float y, int length, float radius)
+void generateWorm(GameMap& gameMap, float x, float y, int length, float radius, bool isBlock)
 {
 
 	std::ranlux24_base rng = gameMap.rng;
@@ -189,10 +201,24 @@ void generateWorm(GameMap& gameMap, float x, float y, int length, float radius)
 					int digX = x + ox;
 					int digY = y + oy;
 
-					auto b = gameMap.getBlockSafe(digX, digY);
-					if (b)
+					if (isBlock) {
+
+						auto b = gameMap.getBlockSafe(digX, digY);
+						if (b)
+						{
+							b->type = Block::air;
+						}
+					}
+					else
 					{
-						b->type = Block::air;
+
+						if (digY < 200) { continue; }
+
+						auto w = gameMap.getWallSafe(digX, digY);
+						if (w)
+						{
+							w->type = Wall::air;
+						}
 					}
 				}
 			}

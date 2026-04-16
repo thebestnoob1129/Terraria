@@ -33,7 +33,7 @@ namespace Audio
 
 		HImpact1,
 		HImpact2,
-		hImpact3,
+		HImpact3,
 
 		Hit1,
 		Hit2,

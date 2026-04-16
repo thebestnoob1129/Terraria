@@ -5,12 +5,42 @@
 
 void AssetManager::loadAll()
 {
-	dirt = LoadTexture(RESOURCES_PATH "Dirt\\Dirt_01-128x128.png");
+	LoadTexturePack();
+	
 	tree = LoadTexture(RESOURCES_PATH "treetextures.png");
 	items = LoadTexture(RESOURCES_PATH "items.png");
 
-	LoadTexturePack();
+	// Backgrounds
+	forestBG = LoadTexture(RESOURCES_PATH "forestBG.png");
+	forestMountainsClose = LoadTexture(RESOURCES_PATH "forest/mountainsClose.png");
+	forestMountainsFar = LoadTexture(RESOURCES_PATH "forest/mountainsFat.png");
+	forestTrees = LoadTexture(RESOURCES_PATH "forest/trees.png");
+	
+	// Desert
+	desertBG = LoadTexture(RESOURCES_PATH "desertBG.png");
+	dunesBack = LoadTexture(RESOURCES_PATH "desert/dunesBack.png");
+	dunesFront = LoadTexture(RESOURCES_PATH "desert/dunesFront.png");
 
+	// Snow
+	snowBG = LoadTexture(RESOURCES_PATH "snowBG.png");
+	snowMountainClose = LoadTexture(RESOURCES_PATH "snow/mountainsBack.png");
+	snowMountainFar = LoadTexture(RESOURCES_PATH "snow/mountainsFront.png");
+	snowHills = LoadTexture(RESOURCES_PATH "snow/optionalHillnFrontOfTrees.png");
+	snowTrees = LoadTexture(RESOURCES_PATH "snow/trees.png");
+	
+	// Sky
+	clouds = LoadTexture( RESOURCES_PATH "sky/clouds.png");
+	cloudsNight = LoadTexture( RESOURCES_PATH "sky/cloudsNight.png");
+	moon = LoadTexture( RESOURCES_PATH "sky/moon.png");
+	moonStandAlone = LoadTexture( RESOURCES_PATH "sky/moonStandAlone.png");
+	sky = LoadTexture( RESOURCES_PATH "sky/sky.png");
+	nightSky = LoadTexture( RESOURCES_PATH "sky/nightSky.png");
+	stars = LoadTexture( RESOURCES_PATH "sky/stars.png");
+	sun = LoadTexture( RESOURCES_PATH "sky/sun.png");
+	sunStandAlone = LoadTexture(RESOURCES_PATH "sky/sunStandAlone.png");
+
+	// Cave
+	caveBG = LoadTexture(RESOURCES_PATH "caveBG.png");
 
 	// Entities
 	player = LoadTexture(RESOURCES_PATH "playerSprites.png");
@@ -20,6 +50,8 @@ void AssetManager::loadAll()
 	zombie = LoadTexture(RESOURCES_PATH "zombie.png");
 	eskimo_zombie = LoadTexture(RESOURCES_PATH "zombie_eskimo.png");
 
+	SetTextureFilter(forestBG, TEXTURE_FILTER_BILINEAR);
+	SetTextureWrap(forestBG, TEXTURE_WRAP_MIRROR_REPEAT);
 }
 
 void AssetManager::LoadTexturePack(int currentPack)

@@ -1,29 +1,17 @@
 // Add Layer Customization into ImGui as a new feature, and add a new demo for it. (PR #5112)
 // Add Different Layers Based on Properties ( Collision Layer, Draw Layer, Background Layer)
+// Refactor Do Jump for entities (Zombie)
 
 [ Issues ]
 
 [ Added ]
-
-- Added New Developer window ( untested )
-
-- Added Entity Damage "OnHit" ( they change to the color red using "TickTint" and "ChangeTint" )
-- Added Enemy Spawn / Despawn
-- Added Entity Item Drops
-
-- Added New Blue Slime Entity
-- Added New Zombie
-- Added New Mummy (Not Rendering)
-- Added new Eskimo Zombie (Not Rendering)
-
-- Added new Setting System
-- Added new Sound System
+- Added Background, stylized way to show movement with parallaxing across the world
+- Added Day/Night cycle
 
 [ Fixed ]
 
-[ Updated ]
+- Entites drop items randomly by default
 
-- Updated Entity struct to include EntityAnimation
-- Updated Save System to support json formatting
+[ Updated ]
 
 [ Removed ]

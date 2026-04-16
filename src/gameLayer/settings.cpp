@@ -38,8 +38,7 @@ void loadSettings()
 	std::ifstream f(RESOURCES_PATH "../settings/settings.txt");
 	if (!f.is_open()) return;
 
-	Json j;
-	j = Json::parse(f, nullptr, /*allow_exceptions=*/false);
+	Json j = Json::parse(f, nullptr, /*allow_exceptions=*/false);
 
 	if (j["masterVolume"].is_number())	settings.masterVolume = j["masterVolume"].get<float>();
 	if (j["musicVolume"].is_number()) settings.musicVolume = j["musicVolume"].get<float>();
@@ -51,6 +50,7 @@ void loadSettings()
 
 }
 
+// Applied to the Setting Menu ( "Apply" button)
 void updateSettings()
 {
 	if (settings != settingsOld)

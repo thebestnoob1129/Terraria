@@ -1,6 +1,7 @@
 #include "gameMap.h"
 #include <random>
-
+#include <asserts.h>
+#include <randomStuff.h>
 void GameMap::create(int w, int h)
 {
 	/*

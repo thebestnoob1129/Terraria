@@ -2,17 +2,19 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include <iostream>
+#include <string>
+
 #include <raylib.h>
 #include <assetManager.h>
 #include <physics.h>
-#include <random>
 #include <memory>
+#include <random>
 #include <entityIdHolder.h>
 #include <entityAnimation.h>
-#include <iostream>
 #include <randomStuff.h>
-#include <string>
 #include <audio.h>
+#include <items.h>
 
 struct AssetManager;
 struct EntityHolder;
@@ -128,7 +130,7 @@ struct Entity {
 
 		// Select Item Id From Array and Return
 
-		int item = getRandomInt(rng, 0, 32);
+		int item = getRandomInt(rng, Block::BLOCK_COUNT + 1, Item::LAST_ITEM);
 		return item;
 	}
 

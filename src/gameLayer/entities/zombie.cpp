@@ -27,7 +27,7 @@ bool Zombie::update(float deltaTime, EntityUpdateData entityUpdateData)
 	// Jump Action
 	auto doJump = [&](bool touch)
 		{
-			if (jumpTimer < 0)
+			if (jumpTimer < 0 || touch)
 			{
 				jumpTimer = getRandomFloat(entityUpdateData.rng, 3, 12);
 
@@ -103,6 +103,7 @@ bool Zombie::update(float deltaTime, EntityUpdateData entityUpdateData)
 
 	case STATE_CHASING:
 	{
+			// Put whole if statement in doJump
 		if (physics.velocity.x <= 0.001f || physics.velocity.x >= -0.001f)
 		{
 			if (physics.rightTouch)

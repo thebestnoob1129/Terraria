@@ -1,4 +1,4 @@
-﻿# CMakeList.txt : CMake project for Terraria, include source and define
+﻿# CMakeList.txt : CMake project for Terra, include source and define
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 4.2)# 3.19.2

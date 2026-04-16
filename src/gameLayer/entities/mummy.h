@@ -2,7 +2,6 @@
 #ifndef MUMMY_H
 #define MUMMY_H
 
-
 #include <entity.h>
 #include <raylib.h>
 
@@ -28,10 +27,10 @@ struct Mummy : public Entity
 
 	bool update(float deltaTime, EntityUpdateData entityUpdateData) override;
 
-	int getEntityType() override { return EntityType_Humanoid; };
+	int getEntityType() override { return EntityType_Humanoid; }
 
-	int getEntityList() override { return Entity_Mummy; };
+	int getEntityList() override { return Entity_Mummy; }
 
-	float getMaxLife() override { return 10; };
+	float getMaxLife() override { return 10; }
 };
 #endif

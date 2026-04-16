@@ -1,6 +1,5 @@
 #include "items.h"
 
-#include <assetManager.h>
 #include <helpers.h>
 
 Texture getTextureForItemType(int itemType, AssetManager& assetManager)

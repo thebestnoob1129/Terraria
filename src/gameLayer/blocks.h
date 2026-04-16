@@ -22,31 +22,31 @@ struct Block
 	{
 		switch (type)
 		{
-		case Block::air:
-		case Block::grass:
-		case Block::leaves:
-		case Block::platform:
-		case Block::workBench:
-		case Block::painting:
-		case Block::sappling:
-		case Block::door:
-		case Block::jar:
-		case Block::table:
-		case Block::wordrobe:
-		case Block::bookShelf:
-		case Block::icePlatform:
-		case Block::iceTable:
-		case Block::iceWordrobe:
-		case Block::iceBookShelf:
-		case Block::sandPlatform:
-		case Block::sandTable:
-		case Block::sandWordrobe:
-		case Block::sandBookShelf:
-		case Block::bonePlatform:
-		case Block::boneBench:
-		case Block::boneWordrobe:
-		case Block::boneBookShelf:
-		case Block::woodLog:
+		case air:
+		case grass:
+		case leaves:
+		case platform:
+		case workBench:
+		case painting:
+		case sappling:
+		case door:
+		case jar:
+		case table:
+		case wordrobe:
+		case bookShelf:
+		case icePlatform:
+		case iceTable:
+		case iceWordrobe:
+		case iceBookShelf:
+		case sandPlatform:
+		case sandTable:
+		case sandWordrobe:
+		case sandBookShelf:
+		case bonePlatform:
+		case boneBench:
+		case boneWordrobe:
+		case boneBookShelf:
+		case woodLog:
 			return false;
 		default:
 			return true;
@@ -131,7 +131,7 @@ struct Wall
 
 	void sanatize()
 	{
-		if (type >= BLOCK_COUNT)
+		if (type >= WALL_COUNT)
 		{
 			type = 0;
 		}
@@ -201,7 +201,7 @@ struct Wall
 		treeLogLeaf,
 		treeLogChopped,
 
-		BLOCK_COUNT,
+		WALL_COUNT,
 	};
 
 };

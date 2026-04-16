@@ -5,15 +5,16 @@
 #include <vector>
 
 #include <blocks.h>
-#include <asserts.h>
 #include <random>
-#include <randomStuff.h>
+
+#include <drawBackground.h>
 
 struct WorldLayer
 {
 	const char* name = "";
 	Block block = {};
 	Wall wall = {};
+	DrawBackground background;
 	int heightStart = 0;
 	int heightEnd = 0;
 	unsigned int height = 0;
@@ -39,6 +40,10 @@ struct GameMap
 	Wall &getWallUnsave(int x, int y);
 	Wall* getWallSafe(int x, int y);
 
+	Vector2 getMapSize()
+	{
+		return Vector2{ static_cast<float>(w), static_cast<float>(h) };
+	}
 };
 
 #endif

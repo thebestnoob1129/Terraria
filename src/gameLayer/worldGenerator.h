@@ -16,7 +16,7 @@ void generateWorld(GameMap& gameMap, int w = 2000, int h = 1000);
 
 float* generateNoise(int seed, FastNoiseSIMD::NoiseType noise, unsigned int octaves, float frequency, float gain = 0.25f, int w = 1, int h = 1, int z = 0);
  
-void generateWorm(GameMap& gameMap, float x, float y, int length, float radius = 2.5f);
+void generateWorm(GameMap& gameMap, float x, float y, int length, float radius = 2.5f, bool isBlock = true);
 
 void generateCave(GameMap& gameMap, int octaves, float frequency, float radius = 5);
 

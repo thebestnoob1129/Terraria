@@ -14,6 +14,41 @@ struct AssetManager
 	Texture2D tree = {};
 	Texture2D items = {};
 	
+	// Backgrounds
+
+	// Forest
+	Texture2D forestBG = {};
+	Texture2D forestMountainsClose = {};
+	Texture2D forestMountainsFar = {};
+	Texture2D forestTrees = {};
+
+	// Desert
+	Texture2D desertBG = {};
+	Texture2D dunesBack = {};
+	Texture2D dunesFront = {};
+	
+	// Snow
+	Texture2D snowBG = {};
+	Texture2D snowMountainClose = {};
+	Texture2D snowMountainFar = {};
+	Texture2D snowHills = {};
+	Texture2D snowTrees = {};
+
+	// Sky
+	Texture2D clouds = {};
+	Texture2D cloudsNight = {};
+	Texture2D moon = {};
+	Texture2D moonStandAlone = {};
+	Texture2D sky = {};
+	Texture2D nightSky = {};
+	Texture2D stars = {};
+	Texture2D sun = {};
+	Texture2D sunStandAlone = {};
+
+	// Cave
+	Texture2D caveBG = {};
+
+
 	// Entities
 	Texture2D player = {};
 	Texture2D slime = {};

@@ -1,5 +1,7 @@
 #include "structure.h"
 
+#include <asserts.h>
+#include <randomStuff.h>
 static std::ranlux24_base rng(std::random_device{}());
 
 void Structure::create(int w, int h)

@@ -12,8 +12,7 @@ struct Player : public Entity
 {
 	Player()
 	{
-		physics.transform.w = 0.8f;
-		physics.transform.h = 1.6f;
+		setColliderSize();
 
 		life = getMaxLife();
 	}	
@@ -21,6 +20,12 @@ struct Player : public Entity
 	Vector2& getPosition()
 	{
 		return physics.transform.position;
+	}
+
+	void setColliderSize() override
+	{
+		physics.transform.w = 0.8f;
+		physics.transform.h = 1.6f;
 	}
 
 	void render(AssetManager& assetManager) override;
@@ -32,6 +37,15 @@ struct Player : public Entity
 	bool update(float deltaTime, EntityUpdateData entityUpdateData) override;
 
 	float getMaxLife() override { return 10; }
+
+	Json formatToJson() override ;
+
+	bool loadFromJson(Json& j) override;
+
+	int armorHead = Item::partyHat;
+	int armorChest = Item::goldChestPlate;
+	int armorLegs = Item::iceBoots;
+	int heldItem = Item::goldSword;
 
 };
 

@@ -9,8 +9,7 @@ struct EskimoZombie : public Entity
 {
 	EskimoZombie()
 	{
-		physics.transform.w = 0.8f;
-		physics.transform.h = 1.6f;
+		setColliderSize();
 		moveSpeed = 7;
 
 		life = getMaxLife();
@@ -32,6 +31,16 @@ struct EskimoZombie : public Entity
 	int getEntityList() override { return Entity_Zombie_Eskimo; }
 
 	float getMaxLife() override { return 10; }
+	
+	void setColliderSize() override
+	{
+		physics.transform.w = 0.8f;
+		physics.transform.h = 1.6f;
+	}
+
+	Json formatToJson() override;
+
+	bool loadFromJson(Json& j) override;
 };
 
 #endif

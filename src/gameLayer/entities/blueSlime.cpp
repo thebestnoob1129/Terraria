@@ -107,3 +107,22 @@ bool BlueSlime::update(float deltaTime, EntityUpdateData entityUpdateData)
 	return true;
 
 }
+
+Json BlueSlime::formatToJson()
+{
+	Json j;
+	addCommonEntityStuffToJson(j);
+
+	return j;
+}
+
+bool BlueSlime::loadFromJson(Json &j)
+{
+	*this = {};
+
+	bool rez = loadCommonEntityStuffFromJson(j);
+
+	setColliderSize();
+
+	return rez;
+}

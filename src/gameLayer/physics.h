@@ -6,6 +6,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <cmath>
+#include <nlohmann/json.hpp>
 
 #if defined(RAYMATH_DISABLE_CPP_OPERATORS)
 // Vector2 operator overloads (only defined when raymath C++ operators are disabled)
@@ -151,6 +152,8 @@ struct Transform2D
 
 };
 
+using Json = nlohmann::json;
+
 struct PhysicalEntity
 {
 	Transform2D transform = {0, 0, 0, 0};
@@ -165,6 +168,51 @@ struct PhysicalEntity
 	bool downTouch = {};
 	bool leftTouch = {};
 	bool rightTouch = {};
+
+	Json formatToJson()
+	{
+		Json j;
+
+		j["posX"] = transform.position.x;
+		j["posY"] = transform.position.y;
+		j["velX"] = velocity.x;
+		j["velY"] = velocity.y;
+
+		return j;
+	}
+
+	bool loadFromJson(Json j)
+	{
+		
+		*this = {};
+
+		if (!j.contains("posX") || !j["posX.isNumber"]){ return false; }
+		transform.position.x = j["posX"];
+
+		if (!j.contains("posY") || !j["posY.isNumber"]){ return false; }
+		transform.position.y = j["posY"];
+
+		if (j.contains("velX"))
+		{
+			if (j["velX"].is_number())
+			{
+				velocity.x = j["velX"];
+			}
+		}
+
+		if (j.contains("velY"))
+		{
+			if (j["velY"].is_number())
+			{
+				velocity.y = j["velY"];
+			}
+		}
+
+		lastPosition = transform.position;
+
+		return true;
+
+	}
 
 	void teleport(Vector2 newPosition)
 	{

@@ -164,3 +164,22 @@ bool Mummy::update(float deltaTime, EntityUpdateData entityUpdateData)
 	return true;
 
 }
+
+Json Mummy::formatToJson()
+{
+	Json j;
+	addCommonEntityStuffToJson(j);
+
+	return j;
+}
+
+bool Mummy::loadFromJson(Json& j)
+{
+	*this = {};
+
+	bool rez = loadCommonEntityStuffFromJson(j);
+
+	setColliderSize();
+
+	return rez;
+}

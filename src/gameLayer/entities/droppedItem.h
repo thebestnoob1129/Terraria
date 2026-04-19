@@ -10,8 +10,7 @@ struct AssetManager;
 struct DroppedItem : public Entity
 {
 	DroppedItem() {
-		physics.transform.w = 0.8f;
-		physics.transform.h = 0.8f;
+		setColliderSize();
 	}
 
 	int itemType = 0;
@@ -26,6 +25,16 @@ struct DroppedItem : public Entity
 	int getEntityList() override { return Entity_DroppedItem; }
 
 	float getMaxLife() override { return 1.f; }
+
+	Json formatToJson() override;
+
+	bool loadFromJson(Json& j) override;
+
+	void setColliderSize() override
+	{
+		physics.transform.w = 0.8f;
+		physics.transform.h = 0.8f;
+	}
 
 	int getMaxItems(int itemType) {
 

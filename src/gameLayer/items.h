@@ -27,7 +27,7 @@ struct Item
 
 	enum
 	{
-		woodPickaxe = Block::BLOCK_COUNT + 1,
+		woodPickaxe = Block::BLOCK_COUNT,
 		woodAxe,
 		woodHammer,
 		stonePickaxe,

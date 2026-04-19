@@ -25,6 +25,9 @@ namespace Audio
 	std::vector<Music> allMusic;
 	int currentMusicPlaying = 0;
 
+	int currentMusicFadingOut = 0;
+	float transitionTime = 0;
+
 	void loadAllMusicAndSounds()
 	{
 		allMusic.push_back({});
@@ -129,6 +132,7 @@ namespace Audio
 
 	void update()
 	{
+		transitionTime -= GetFrameTime();
 		if (!isMusicPlaying())
 		{
 			currentMusicPlaying = 0;
@@ -198,6 +202,29 @@ namespace Audio
 	{
 		if (!currentMusicPlaying) { return false; }
 		return IsAudioStreamPlaying(allMusic[currentMusicPlaying].stream);
+	}
+
+	void setMusic(int music)
+	{
+		if (music != currentMusicPlaying)
+		{
+			if (transitionTime <= 0)
+			{
+				transitionTime = 1;
+				currentMusicFadingOut = currentMusicPlaying;
+				currentMusicPlaying = music;
+
+				SetMusicVolume(allMusic[currentMusicFadingOut], getSettings().musicVolume * transitionTime);
+				UpdateMusicStream(allMusic[currentMusicFadingOut]);
+
+				SetMusicVolume(allMusic[currentMusicPlaying], 1 - getSettings().musicVolume * transitionTime);
+				UpdateMusicStream(allMusic[currentMusicPlaying]);
+			}
+			else
+			{
+
+			}
+		}
 	}
 
 }

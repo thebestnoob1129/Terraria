@@ -4,9 +4,7 @@
 
 #include "gameMap.h"
 #include <saveMap.h>
-#include "randomStuff.h"
-#include "raymath.h"
-#include <iostream>
+#include <randomStuff.h>
 #include <FastNoiseSIMD.h>
 #include <structure.h>
 
@@ -22,10 +20,11 @@ void generateCave(GameMap& gameMap, int octaves, float frequency, float radius =
 
 static void generateTrees(GameMap& gameMap);
 
-void createWorldLayer(GameMap& gameMap, Block ground, Vector2 size = Vector2{ 50, 100 }, Vector2 hills = Vector2{ 4, 0.01f }, bool hasGrass = false);
+//void createWorldLayer(GameMap& gameMap, Block ground, Vector2 size = Vector2{ 50, 100 }, Vector2 hills = Vector2{ 4, 0.01f }, bool hasGrass = false);
+void createWorldLayer(GameMap& gameMap, WorldLayer layer, bool hasGrass = false);
 
-void createBiome(GameMap& gameMap, Block ground, Wall wall, Vector2 width, Vector2 height = Vector2{ 0.2f, 0.4f }, bool hasGrass = false);
-
+//void createBiome(GameMap& gameMap, Block ground, Wall wall, Vector2 width, Vector2 height = Vector2{ 0.2f, 0.4f }, bool hasGrass = false);
+void createBiome(GameMap& gameMap, Biome biome, bool hasGrass = false);
 
 Structure generateStructure(GameMap& gameMap, const char* filename);
 

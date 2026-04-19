@@ -3,6 +3,7 @@
 #define ASSET_MANAGER_H
 
 #include <raylib.h>
+#include <unordered_map>
 
 struct AssetManager
 {
@@ -51,15 +52,32 @@ struct AssetManager
 
 	// Entities
 	Texture2D player = {};
+	Texture2D playerFeet = {};
+	Texture2D playerBack = {};
+	Texture2D playerFront = {};
+	Texture2D playerHead = {};
+
 	Texture2D slime = {};
 	Texture2D blueSlime = {};
 	Texture2D mummy = {};
 	Texture2D zombie = {};
 	Texture2D eskimo_zombie = {};
 	
+	// Armor
+	std::unordered_map<int, Texture2D> frontArmor;
+	std::unordered_map<int, Texture2D> backArmor;
+	std::unordered_map<int, Texture2D> feetArmor;
+	std::unordered_map<int, Texture2D> headArmor;
+
 	// Functions
 	void loadAll();
 	void LoadTexturePack(int currentPack = -1);
+
+	Texture2D getHeadTexture(int item);
+	Texture2D getBackTexture(int item);
+	Texture2D getFeetTexture(int item);
+	Texture2D getFrontTexture(int item);
+
 };
 
 #endif

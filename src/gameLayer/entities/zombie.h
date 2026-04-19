@@ -4,13 +4,13 @@
 
 #include <entity.h>
 #include <raylib.h>
+#include <set>
 
 struct Zombie : public Entity
 {
 	Zombie()
 	{
-		physics.transform.w = 0.8f;
-		physics.transform.h = 1.6f;
+		setColliderSize();
 		moveSpeed = 7;
 
 		life = getMaxLife();
@@ -32,6 +32,16 @@ struct Zombie : public Entity
 	int getEntityList() override { return Entity_Zombie; }
 
 	float getMaxLife() override { return 10; }
+
+	Json formatToJson() override;
+
+	bool loadFromJson(Json& j) override;
+
+	void setColliderSize() override
+	{
+		physics.transform.w = 0.8f;
+		physics.transform.h = 1.6f;
+	}
 };
 
 #endif

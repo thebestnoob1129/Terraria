@@ -11,15 +11,29 @@
 
 struct WorldLayer
 {
-	const char* name = "";
 	Block block = {};
 	Wall wall = {};
-	DrawBackground background;
-	int heightStart = 0;
-	int heightEnd = 0;
-	unsigned int height = 0;
-	int smoothness = 0;
-	float frequency = 0;
+
+	int heightStart = 100;
+	int heightEnd = 300;
+	int smoothness = 4;
+	float frequency = 0.05f;
+};
+
+struct Biome
+{
+	Block groundBlock = {};
+	Block stoneBlock = {};
+	Wall wall = {};
+
+	int widthStart = 100;
+	int widthEnd = 300;
+	int heightStart = 100;
+	int heightEnd = 300;
+
+	int smoothness = 4;
+	float frequency = 0.05f;
+
 };
 
 struct GameMap
@@ -30,8 +44,11 @@ struct GameMap
 	std::vector<Block> mapData = {};
 	std::vector<Wall> wallData = {};
 	std::vector<WorldLayer> worldLayers = {};
+	std::vector<Biome> biomes = {};
 	unsigned int seed = 0;
 	std::ranlux24_base rng = {};
+
+	bool shouldSave = true;// World & entities
 
 	void create(int w, int h);
 
@@ -39,6 +56,9 @@ struct GameMap
 	Block* getBlockSafe(int x, int y);
 	Wall &getWallUnsave(int x, int y);
 	Wall* getWallSafe(int x, int y);
+
+	int desertStart = 0;
+	int desertEnd = 0;
 
 	Vector2 getMapSize()
 	{

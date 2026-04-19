@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <string>
 
+#include "items.h"
+
 void AssetManager::loadAll()
 {
 	LoadTexturePack();
@@ -43,7 +45,7 @@ void AssetManager::loadAll()
 	caveBG = LoadTexture(RESOURCES_PATH "caveBG.png");
 
 	// Entities
-	player = LoadTexture(RESOURCES_PATH "playerSprites.png");
+
 	slime = LoadTexture(RESOURCES_PATH "slime.png");
 	blueSlime = LoadTexture(RESOURCES_PATH "blueslime.png");
 	mummy = LoadTexture(RESOURCES_PATH "mummy.png");
@@ -52,6 +54,35 @@ void AssetManager::loadAll()
 
 	SetTextureFilter(forestBG, TEXTURE_FILTER_BILINEAR);
 	SetTextureWrap(forestBG, TEXTURE_WRAP_MIRROR_REPEAT);
+	
+	//player = LoadTexture(RESOURCES_PATH "playerSprites.png");
+	feetArmor[0] = LoadTexture(RESOURCES_PATH "body/player_feet.png");
+	headArmor[0] = LoadTexture(RESOURCES_PATH "body/player_head.png");
+	frontArmor[0] = LoadTexture(RESOURCES_PATH "body/player_front.png");
+	backArmor[0] = LoadTexture(RESOURCES_PATH "body/player_back.png");
+
+	headArmor[Item::partyHat] = LoadTexture(RESOURCES_PATH "body/party_hat.png");
+	headArmor[Item::sunGlasses] = LoadTexture(RESOURCES_PATH "body/sunglasses.png");
+
+	feetArmor[Item::copperBoots] = LoadTexture(RESOURCES_PATH "body/copper_armour_feet.png");
+	headArmor[Item::copperHelmet] = LoadTexture(RESOURCES_PATH "body/copper_armour_head.png");
+	frontArmor[Item::copperChestPlate] = LoadTexture(RESOURCES_PATH "body/copper_armour_front.png");
+	backArmor[Item::copperChestPlate] = LoadTexture(RESOURCES_PATH "body/copper_armour_back.png");
+
+	feetArmor[Item::ironBoots] = LoadTexture(RESOURCES_PATH "body/iron_armour_feet.png");
+	headArmor[Item::ironHelmet] = LoadTexture(RESOURCES_PATH "body/iron_armour_head.png");
+	frontArmor[Item::ironChestPlate] = LoadTexture(RESOURCES_PATH "body/iron_armour_front.png");
+	backArmor[Item::ironChestPlate] = LoadTexture(RESOURCES_PATH "body/iron_armour_back.png");
+
+	feetArmor[Item::goldBoots] = LoadTexture(RESOURCES_PATH "body/gold_armour_feet.png");
+	headArmor[Item::goldHelmet] = LoadTexture(RESOURCES_PATH "body/gold_armour_head.png");
+	frontArmor[Item::goldChestPlate] = LoadTexture(RESOURCES_PATH "body/gold_armour_front.png");
+	backArmor[Item::goldChestPlate] = LoadTexture(RESOURCES_PATH "body/gold_armour_back.png");
+
+	feetArmor[Item::iceBoots] = LoadTexture(RESOURCES_PATH "body/ice_armour_feet.png");
+	headArmor[Item::iceHelmet] = LoadTexture(RESOURCES_PATH "body/ice_armour_head.png");
+	frontArmor[Item::iceChestPlate] = LoadTexture(RESOURCES_PATH "body/ice_armour_front.png");
+	backArmor[Item::iceChestPlate] = LoadTexture(RESOURCES_PATH "body/ice_armour_back.png");
 }
 
 void AssetManager::LoadTexturePack(int currentPack)
@@ -83,5 +114,59 @@ void AssetManager::LoadTexturePack(int currentPack)
 	textures = LoadTexture((newPath + texture).c_str());
 	walls = LoadTexture((newPath + background).c_str());
 	frame = LoadTexture((newPath + _frame).c_str());
+}
+
+Texture2D AssetManager::getHeadTexture(int item)
+{
+	auto found = headArmor.find(item);
+	if (found != headArmor.end())
+	{
+		if (found->second.id == 0)
+		{
+			return headArmor[0];
+		}
+		return found->second;
+	}
+	return headArmor[0];
+}
+Texture2D AssetManager::getBackTexture(int item)
+{
+	auto found = backArmor.find(item);
+	if (found != backArmor.end())
+	{
+		if (found->second.id == 0)
+		{
+			return backArmor[0];
+		}
+		return found->second;
+	}
+	return backArmor[0];
+}
+Texture2D AssetManager::getFeetTexture(int item)
+{
+	auto found = feetArmor.find(item);
+	if (found != feetArmor.end())
+	{
+		if (found->second.id == 0)
+		{
+			return feetArmor[0];
+		}
+		return found->second;
+	}
+	return feetArmor[0];
+}
+
+Texture2D AssetManager::getFrontTexture(int item)
+{
+	auto found = frontArmor.find(item);
+	if (found != frontArmor.end())
+	{
+		if (found->second.id == 0)
+		{
+			return frontArmor[0];
+		}
+		return found->second;
+	}
+	return frontArmor[0];
 }
 

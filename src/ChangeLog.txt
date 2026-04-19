@@ -1,12 +1,18 @@
 // Add Layer Customization into ImGui as a new feature, and add a new demo for it. (PR #5112)
 // Add Different Layers Based on Properties ( Collision Layer, Draw Layer, Background Layer)
 // Refactor Do Jump for entities (Zombie)
+// Discover new ways to recover game save file, (checking the entity Id counter, loading the player at a spawn point, sanitizing world by regenerating the seed)
+// Add Auto Save System
 
 [ Issues ]
 
+- Having Issues transitioning music similarly to background
+
 [ Added ]
-- Added Background, stylized way to show movement with parallaxing across the world
+- Added Backgrounds with transition, stylized way to show movement with parallaxing across the world
 - Added Day/Night cycle
+- Added World Save
+- Added Entity Save
 
 [ Fixed ]
 

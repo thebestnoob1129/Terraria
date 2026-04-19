@@ -4,7 +4,7 @@
 
 namespace Audio
 {
-	
+
 	void init();
 	
 	void loadAllMusicAndSounds();
@@ -20,6 +20,8 @@ namespace Audio
 	bool isMusicPlaying();
 
 	void stopAllMusic();
+
+	void setMusic(int music);
 
 	enum Sounds
 	{

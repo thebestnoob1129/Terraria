@@ -164,3 +164,23 @@ bool EskimoZombie::update(float deltaTime, EntityUpdateData entityUpdateData)
 	return true;
 
 }
+Json EskimoZombie::formatToJson()
+{
+	Json j;
+	addCommonEntityStuffToJson(j);
+
+	//j["key"] = data;
+
+	return j;
+}
+
+bool EskimoZombie::loadFromJson(Json& j)
+{
+	*this = {};
+
+	bool rez = loadCommonEntityStuffFromJson(j);
+
+	setColliderSize();
+
+	return rez;
+}

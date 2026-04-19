@@ -17,6 +17,11 @@ struct BlueSlime : public Slime
 
 	float getMaxLife() override { return 15; };
 
+	Json formatToJson() override;
+
+	bool loadFromJson(Json& j) override;
+
+	// Maybe Add Json Override
 };
 
 #endif

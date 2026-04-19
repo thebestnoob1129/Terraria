@@ -8,12 +8,11 @@ struct GameData
 
 	// Camera Information
 	Camera2D camera = {};
-	float cameraSpeed = 10;
 
 	// World Information
 	DrawBackground background;
 	bool useGravity = true;
-	float currentTime;
+	float currentTime = 0;
 
 	// Creative Information
 	int creativeSelectedBlock = Block::dirt;
@@ -126,6 +125,8 @@ void spawnRandomEnemy(Vector2 playerPosition)
 	auto id = gameData.entities.idHolder.getEntityIdAndIncrement();
 	gameData.entities.entities[id] = std::move(newEntity);
 
+	saveEntitiesOnly(gameData.entities, gameData.player);
+
 }
 
 #pragma endregion
@@ -159,6 +160,12 @@ bool init_game()
 
 bool update_game()
 {
+	if (gameData.gameMap.shouldSave)
+	{
+		saveWorld(gameData.gameMap, gameData.entities, gameData.player);
+		gameData.gameMap.shouldSave = false;
+	}
+	
 	Audio::update();
 	updateSettings(); // Automatically Change Settings if world Changed | Or Use On Apply Settings;
 	float deltaTime = GetFrameTime();
@@ -242,6 +249,7 @@ bool update_game()
 		if (IsKeyDown(KEY_LEFT_CONTROL) && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 		{
 			gameData.creativeSelectedBlock = gameData.gameMap.getBlockSafe(blockX, blockY)->type;
+			//saveWorldOnly(gameData.gameMap);
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 		{
@@ -258,6 +266,7 @@ bool update_game()
 					}
 
 					*b = {};
+					//saveWorldOnly(gameData.gameMap);
 				}
 			}
 		}
@@ -279,7 +288,6 @@ bool update_game()
 
 
 #pragma region Entities
-	float playerSpeed = 7;
 
 	auto updateEntityPhysics = [&](auto& entity, bool applyGravity = true)
 	{
@@ -291,12 +299,62 @@ bool update_game()
 	};
 
 	// Player Controller 
+	bool moving = false;
+	bool falling = false;
 
-	if (IsKeyDown(KEY_W)) gameData.player.physics.transform.position.y -= playerSpeed * deltaTime;
-	if (IsKeyDown(KEY_S)) gameData.player.physics.transform.position.y += playerSpeed * deltaTime;
-	if (IsKeyDown(KEY_A)) gameData.player.physics.transform.position.x -= playerSpeed * deltaTime;
-	if (IsKeyDown(KEY_D)) gameData.player.physics.transform.position.x += playerSpeed * deltaTime;
-	if (IsKeyDown(KEY_SPACE)) gameData.player.physics.jump(10);
+	// Creative Move Movement
+	static bool creative = false;
+	if (creative) {
+		if (IsKeyDown(KEY_W))
+		{
+			gameData.player.physics.transform.position.y -= gameData.player.physics.moveSpeed * deltaTime;
+			moving = true;
+		}
+		if (IsKeyDown(KEY_S))
+		{
+			gameData.player.physics.transform.position.y += gameData.player.physics.moveSpeed * deltaTime;
+			moving = true;
+		}
+	}
+	// Natural Movement
+	if (IsKeyDown(KEY_A))
+	{
+		gameData.player.physics.transform.position.x -= gameData.player.physics.moveSpeed * deltaTime;
+		moving = true;
+		gameData.player.animation.movingLeft = true;
+	}
+	if (IsKeyDown(KEY_D))
+	{
+		gameData.player.physics.transform.position.x += gameData.player.physics.moveSpeed * deltaTime;
+		moving = true;
+		gameData.player.animation.movingLeft = false;
+	}
+	if (IsKeyDown(KEY_SPACE)) gameData.player.physics.jump(15.0);
+
+	// Falling Flag
+	if (gameData.player.physics.downTouch)
+	{
+		falling = false;
+	}
+	else
+	{
+		falling = true;
+	}
+
+	// Falling Animation
+	if (falling)
+	{
+		gameData.player.animation.setAnimation(2);
+	}
+	else if (moving)
+	{
+		gameData.player.animation.setAnimation(1);
+	}
+	else
+	{
+		gameData.player.animation.setAnimation(0);
+	}
+	gameData.player.animation.update(deltaTime, 0.08f, 7);
 
 	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
@@ -309,13 +367,12 @@ bool update_game()
 				blockY <= e.second->physics.transform.position.y + attackRange && blockY >= e.second->physics.transform.position.y - attackRange)
 			{
 				if (e.second->getEntityType() == EntityType_DroppedItem) { break; }
-				std::cout << "Attempt Attack: " << 3 << "\n";
 				e.second->OnHit(3);
 			}
 		}
 	}
 
-	updateEntityPhysics(gameData.player, gameData.useGravity);
+	updateEntityPhysics(gameData.player, !creative);
 
 	// Entity Controller
 
@@ -369,16 +426,37 @@ bool update_game()
 #pragma region Time Cycle
 
 	float cycle = getCycleTime(60 * 5);
+	float saveCycle = getCycleTime(60 * 2);
 	float dayFactor = getDayFactor(cycle);
 
 	// Get each background needed for day / night
 	
+	int backgroundType = DrawBackground::forest;
+	int musicType = Audio::musicForest;
+
 	
-	if (gameData.player.getPosition().y > 200)
+	if (gameData.player.getPosition().x > gameData.gameMap.desertStart &&
+		gameData.player.getPosition().x < gameData.gameMap.desertEnd)
+	{
+		backgroundType = DrawBackground::desert;
+		musicType = Audio::musicDesert;
+	}
+	else if (gameData.player.getPosition().y > 150)
 	{
 		// Draw Cave Background
-		gameData.background.draw(assetManager.caveBG, deltaTime, gameData.camera, gameData.gameMap.getMapSize());
+		backgroundType = DrawBackground::cave;
+		musicType = Audio::musicCave;
+		//gameData.background.draw(assetManager.caveBG, deltaTime, gameData.camera, gameData.gameMap.getMapSize());
 	}
+	gameData.background.setBackground(backgroundType);
+	Audio::playMusic(musicType);
+	gameData.background.draw(deltaTime, assetManager, gameData.camera, gameData.gameMap.getMapSize());
+	
+	if (saveCycle == 1)
+	{
+		gameData.gameMap.shouldSave = true;
+	}
+	/*
 	else // Normal Day Cycle
 	{
 
@@ -392,25 +470,8 @@ bool update_game()
 		gameData.background.draw(assetManager.sky, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1 - dayFactor);
 		gameData.background.draw(assetManager.sun, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1 - dayFactor);
 		gameData.background.draw(assetManager.clouds, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1 - dayFactor);
-		/*
-		// Draw Sky ( immediate Switch
-		if (dayFactor <= 0.5f) // night
-		{
-			gameData.background.draw(assetManager.nightSky, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, scaled);
-			gameData.background.draw(assetManager.stars, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, scaled);
-			gameData.background.draw(assetManager.moon, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, scaled);
-			gameData.background.draw(assetManager.cloudsNight, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, scaled);
-		}
-		else  // night
-		{
-			gameData.background.draw(assetManager.sky, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1-scaled);
-			gameData.background.draw(assetManager.sun, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1-scaled);
-			gameData.background.draw(assetManager.clouds, deltaTime, gameData.camera, gameData.gameMap.getMapSize(), 0.3f, 1-scaled);
-		}
-		*/
-
-
 	}
+	*/
 	
 	// Change background based on day factor time with alpha
 
@@ -452,7 +513,6 @@ bool update_game()
 			auto& b = gameData.gameMap.getBlockUnsave(x, y);
 			auto& w = gameData.gameMap.getWallUnsave(x, y);
 
-
 			if (w.type != Block::air)
 			{
 				DrawTexturePro(
@@ -475,15 +535,6 @@ bool update_game()
 		}
 	}
 
-	for (int i = 1; i < gameData.gameMap.h; i *= 50)
-	{
-		for (int x = 0; x < gameData.gameMap.w; x++)
-		{
-			auto b = gameData.gameMap.getBlockSafe(x, i);
-			if (b) { b->type = Block::goldBlock; }
-		}
-	}
-
 #pragma region Entities
 
 	for (auto& e : gameData.entities.entities) {
@@ -496,14 +547,7 @@ bool update_game()
 
 	playerSprite.position.y -= (playerSprite.h - gameData.player.physics.transform.h) / 2;
 
-	DrawTexturePro(
-		assetManager.player,
-		getTextureAtlas(0, 0, 32, 64),
-		getRectangleForEntity(gameData.player.physics.transform, 1, 2),
-		{ 0, 0 },// Origin From Top Left Corner
-		0.0f,
-		WHITE
-	);
+	gameData.player.render(assetManager);
 
 #pragma endregion
 
@@ -583,18 +627,18 @@ bool update_game()
 	if (showImgui) {
 
 		ImGui::Begin("Game Controller");
-
+		ImGui::Checkbox("Creative", &creative);
 		static int genWorldWidth = 900;
 		static int genWorldHeight = 500;
 		static int genSeed = 0;
+		static bool showLayers;
+		static bool showBiomes;
 
 		// Camera Data
 		ImGui::BeginChild("Camera Data");//, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.2f));
-
 		ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
-		ImGui::SliderFloat("Camera speed:", &gameData.cameraSpeed, 10, 150);
-
 		ImGui::EndChild();
+
 		ImGui::Separator();
 
 		ImGui::BeginChild("Player Data");// , ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.3f));
@@ -604,6 +648,7 @@ bool update_game()
 		ImGui::InputFloat2("Player Position:", &gameData.player.physics.transform.position.x);
 		ImGui::InputFloat2("Player Velocity:", &gameData.player.physics.velocity.x);
 		ImGui::InputFloat2("Player Acceleration:", &gameData.player.physics.acceleration.x);
+		ImGui::SliderFloat("Player Speed: ", &gameData.player.physics.moveSpeed, 1, 100);
 		ImGui::InputFloat2("Teleport To:", &teleportPosition.x);
 
 		if (ImGui::Button("Teleport Player"))
@@ -624,24 +669,66 @@ bool update_game()
 		ImGui::InputInt("World Width:", &genWorldWidth, 1, 100);
 		ImGui::InputInt("World Height:", &genWorldHeight, 1, 100);
 
-		static int texturePackID = -1;
-		ImGui::InputInt("Texture Pack ID:", &texturePackID, 1, 2);
-		if (ImGui::Button("Load Texture Pack"))
-		{
-			assetManager.LoadTexturePack(texturePackID);
-		}
-
-		if (ImGui::Button("Gravity"))
-		{
-			gameData.useGravity = !gameData.useGravity;
-		}
-
 		if (ImGui::Button("Create New World"))
 		{
 			gameData.gameMap.seed = genSeed;
 			generateWorld(gameData.gameMap, genWorldWidth, genWorldHeight);
 		}
+		if (ImGui::Button("Save World"))
+		{
+			saveWorld(gameData.gameMap, gameData.entities, gameData.player);
+		}
+		if (ImGui::Button("Load World"))
+		{
+			if (!loadWorld(gameData.gameMap, gameData.entities, gameData.player))
+			{
+				return false;
+			}
+		}
+		static int texturePackID = -1;
+		ImGui::InputInt("Texture Pack ID:", &texturePackID, 1, 2);
 
+		if (ImGui::Button("Load Texture Pack")){assetManager.LoadTexturePack(texturePackID);}
+		if (ImGui::Button("Show Layers")) { showLayers = !showLayers; }
+		/*
+		ImGui::EndChild();
+		ImGui::Separator();
+		ImGui::BeginChild("# World Layer: ");
+		if (showLayers) {
+			for (auto &l : gameData.gameMap.worldLayers)
+			{
+
+				ImGui::Text("Block ID: " + l.block.type);
+				ImGui::Text("Wall ID: " + l.wall.type);
+				ImGui::Text("Starting Height: " + l.heightStart);
+				ImGui::Text("Ending Height: " + l.heightEnd);
+				ImGui::Text("Smoothness: " + l.smoothness);
+				ImGui::Text("Frequency: " + static_cast<int>(l.frequency));
+			}
+		}
+		ImGui::EndChild();
+		ImGui::Separator();
+
+		ImGui::BeginChild("#Biomes Layer" );
+		if (ImGui::Button("Show Biomes")) { showBiomes = !showBiomes; }
+		if (showBiomes) {
+			for (auto &b : gameData.gameMap.biomes)
+			{
+				ImGui::Text("Ground Block ID: " + b.groundBlock.type);
+				ImGui::Text("Stone Block ID: " + b.stoneBlock.type);
+				ImGui::Text("Wall ID: " + b.wall.type);
+
+				ImGui::Text("Starting Height: " + b.heightStart);
+				ImGui::Text("Ending Height: " + b.heightEnd);
+				ImGui::Text("Starting Width: " + b.widthStart);
+				ImGui::Text("Ending Width: " + b.widthEnd);
+
+				ImGui::Text("Smoothness: " + b.smoothness);
+				ImGui::Text("Frequency: " + static_cast<int>(b.frequency));
+			}
+		}
+		ImGui::EndChild();
+		*/
 		if (ImGui::Button("Copy"))
 		{
 			gameData.copyStructure.copyFromMap(gameData.gameMap, gameData.selectionStart, gameData.selectionEnd);
@@ -681,6 +768,7 @@ bool update_game()
 			path += ".bin";
 
 			saveBlockDataToFile(gameData.copyStructure.mapData,
+				gameData.copyStructure.wallData,
 				gameData.copyStructure.w, gameData.copyStructure.h,
 				path.c_str());
 		}
@@ -691,6 +779,7 @@ bool update_game()
 			path += ".bin";
 
 			loadBlockDataFromFile(gameData.copyStructure.mapData,
+				gameData.copyStructure.wallData,
 				gameData.copyStructure.w, gameData.copyStructure.h,
 				path.c_str());
 		}
@@ -710,37 +799,37 @@ bool update_game()
 		ImGui::Separator();
 
 		ImGui::BeginChild("Creative ");// , ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.6f));
-
-		for (int i = 0; i < Block::BLOCK_COUNT; i++)
-		{
-			auto atlas = getTextureAtlas(i, 0);
-			atlas.x /= assetManager.textures.width;
-			atlas.width /= assetManager.textures.width;
-			atlas.y /= assetManager.textures.height;
-			atlas.height /= assetManager.textures.height;
-
-			ImGui::PushID(i);
-
-			std::string str = std::to_string(i);
-			const char* char_ptr = str.c_str();
-
-			ImTextureID tex = static_cast<ImTextureID>(static_cast<intptr_t>(assetManager.textures.id));
-			if (ImGui::ImageButton(char_ptr, tex,
-				{ 35, 35 }, { atlas.x, atlas.y },
-				{ atlas.x + atlas.width, atlas.y + atlas.height }))
+		if (creative) {
+			for (int i = 0; i < Block::BLOCK_COUNT; i++)
 			{
-				gameData.creativeSelectedBlock = i;
+				auto atlas = getTextureAtlas(i, 0);
+				atlas.x /= assetManager.textures.width;
+				atlas.width /= assetManager.textures.width;
+				atlas.y /= assetManager.textures.height;
+				atlas.height /= assetManager.textures.height;
+
+				ImGui::PushID(i);
+
+				std::string str = std::to_string(i);
+				const char* char_ptr = str.c_str();
+
+				ImTextureID tex = static_cast<ImTextureID>(static_cast<intptr_t>(assetManager.textures.id));
+				if (ImGui::ImageButton(char_ptr, tex,
+					{ 35, 35 }, { atlas.x, atlas.y },
+					{ atlas.x + atlas.width, atlas.y + atlas.height }))
+				{
+					gameData.creativeSelectedBlock = i;
+				}
+
+				ImGui::PopID();
+
+				if (i % 10 != 0)
+				{
+					ImGui::SameLine();
+				}
+
 			}
-
-			ImGui::PopID();
-
-			if (i % 10 != 0)
-			{
-				ImGui::SameLine();
-			}
-
 		}
-
 		ImGui::EndChild();
 
 		ImGui::Separator();
@@ -781,6 +870,7 @@ bool update_game()
 void close_game()
 {
 	saveSettings();
+	saveWorld(gameData.gameMap, gameData.entities, gameData.player);
 	gameData = {};
 
 	std::cout << "Close Game \n";

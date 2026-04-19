@@ -15,10 +15,13 @@
 #include <randomStuff.h>
 #include <audio.h>
 #include <items.h>
+#include <nlohmann/json.hpp>
 
 struct AssetManager;
 struct EntityHolder;
 struct EntityAnimation;
+
+using Json = nlohmann::json;
 
 enum EntityList
 {
@@ -59,6 +62,18 @@ struct Entity {
 	float tintTimer = 0.0f;
 	float life = 1;
 
+	enum AI_State
+	{
+		STATE_WONDERING = 0,
+		STATE_CHASING,
+		STATE_ATTACKING
+	};
+
+
+	int currentState = STATE_WONDERING;
+	float changeStateTimer = 1;
+	float jumpTimer = 0;
+	float moveSpeed = 5;
 	Vector2& getPosition() {
 		return physics.transform.position;
 	}
@@ -67,26 +82,60 @@ struct Entity {
 		physics.teleport(position);
 	}
 
-	// Call this each frame from derived update() implementations to handle tint timing.
-	void TickTint(float deltaTime = 0) {
-		if (tintTimer > 0.0f) {
-			tintTimer -= deltaTime;//GetFrameTime();
-			if (tintTimer <= 0.0f) {
-				tintTimer = 0.0f;
-				tint = baseTint;
-			}
-		}
-	}
 
 	virtual void render(AssetManager& assetManager) = 0;
 
 	virtual bool update(float deltaTime, EntityUpdateData entityUpdateData) = 0;
+
+	virtual void setColliderSize() = 0;
 
 	virtual int getEntityType() = 0;
 
 	virtual int getEntityList() = 0;
 	
 	virtual float getMaxLife() = 0;
+
+	virtual Json formatToJson() { return {}; }
+	
+	virtual bool loadFromJson(Json& j) { return true; }
+
+	void addCommonEntityStuffToJson(Json &json)
+	{
+		json["physics"] = physics.formatToJson();
+		json["life"] = life;
+
+		json["entityTime"] = getEntityList();
+	}
+
+	bool loadCommonEntityStuffFromJson(Json &json)
+	{
+		if (json.contains("physics"))
+		{
+			auto j = json["physics"];
+
+			if (j.is_object())
+			{
+				if (!physics.loadFromJson(j))
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+
+		if (json["life"].is_number())
+		{
+			life = json[life];
+		}
+		return true;
+	}
 
 	virtual void OnHit(float damage, Color col = Color{255, 0, 0, 255})
 	{
@@ -111,6 +160,16 @@ struct Entity {
 		tintTimer = 0.1f;
 	}
 
+	// Call this each frame from derived update() implementations to handle tint timing.
+	void TickTint(float deltaTime = 0) {
+		if (tintTimer > 0.0f) {
+			tintTimer -= deltaTime;//GetFrameTime();
+			if (tintTimer <= 0.0f) {
+				tintTimer = 0.0f;
+				tint = baseTint;
+			}
+		}
+	}
 	virtual void ChangeTint(Color color, float timer = 2.0f)
 	{
 		// Non-blocking: set tint and duration; call TickTint from update to process.
@@ -133,19 +192,7 @@ struct Entity {
 		int item = getRandomInt(rng, Block::BLOCK_COUNT + 1, Item::LAST_ITEM);
 		return item;
 	}
-
-	enum AI_State
-	{
-		STATE_WONDERING = 0,
-		STATE_CHASING,
-		STATE_ATTACKING
-	};
-
-
-	int currentState = STATE_WONDERING;
-	float changeStateTimer = 1;
-	float jumpTimer = 0;
-	float moveSpeed;
 };
+
 
 #endif

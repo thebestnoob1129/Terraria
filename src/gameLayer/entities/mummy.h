@@ -9,8 +9,7 @@ struct Mummy : public Entity
 {
 	Mummy()
 	{
-		physics.transform.w = 0.8f;
-		physics.transform.h = 1.6f;
+		setColliderSize();
 		moveSpeed = 7;
 
 		life = getMaxLife();
@@ -32,5 +31,15 @@ struct Mummy : public Entity
 	int getEntityList() override { return Entity_Mummy; }
 
 	float getMaxLife() override { return 10; }
+
+	Json formatToJson() override;
+
+	bool loadFromJson(Json& j) override;
+
+	void setColliderSize() override
+	{
+		physics.transform.w = 0.8f;
+		physics.transform.h = 1.6f;
+	}
 };
 #endif

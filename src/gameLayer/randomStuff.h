@@ -4,7 +4,6 @@
 
 #include <random>
 #include <raylib.h>
-#include <limits>
 
 enum Rarity
 {
@@ -23,7 +22,7 @@ enum Rarity
 float getRandomFloat(std::ranlux24_base& rng, float min = -1, float max = 1);
 
 // Returns an int
-int getRandomInt(std::ranlux24_base& rng, int min = INT_MIN, int max = INT_MAX);
+int getRandomInt(std::ranlux24_base& rng, int min = -10, int max = 10);
 
 // Gets a Chance
 bool getRandomChance(std::ranlux24_base& rng, float chance);

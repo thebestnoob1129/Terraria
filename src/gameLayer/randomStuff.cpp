@@ -7,8 +7,17 @@ float getRandomFloat(std::ranlux24_base& rng, float min, float max)
 }
 int getRandomInt(std::ranlux24_base& rng, int min, int max)
 {
-	std::uniform_real_distribution<> dis(min, max);
-	return dis(rng);
+	if (min > max)
+	{
+		std::uniform_real_distribution<> dis(max, min);
+		return dis(rng);
+	}
+	else
+	{
+		std::uniform_real_distribution<> dis(min, max);
+		return dis(rng);
+	}
+
 }
 bool getRandomChance(std::ranlux24_base& rng, float chance)
 {

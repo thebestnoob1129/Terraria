@@ -26,9 +26,7 @@ struct EskimoZombie : public Entity
 
 	bool update(float deltaTime, EntityUpdateData entityUpdateData) override;
 
-	int getEntityType() override { return EntityType_Humanoid; }
-
-	int getEntityList() override { return Entity_Zombie_Eskimo; }
+	int getEntityType() override { return Entity_Zombie_Eskimo; }
 
 	float getMaxLife() override { return 10; }
 	

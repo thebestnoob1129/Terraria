@@ -8,9 +8,29 @@
 #include <raymath.h>
 #include <string>
 
+
 namespace Audio
 {
-	
+	void init(){};
+
+	void loadAllMusicAndSounds(){};
+
+	void update(){};
+
+	void playSound(int sound, float volume){};
+
+	void playMusic(int index){};
+
+	bool isSoundPlaying(int sound) { return false; };
+
+	bool isMusicPlaying() { return false; };
+
+	void stopAllMusic(){};
+
+	void setMusic(int music){};
+}/*
+namespace Audio
+{
 	void init()
 	{
 		InitAudioDevice();
@@ -27,7 +47,7 @@ namespace Audio
 
 	int currentMusicFadingOut = 0;
 	float transitionTime = 0;
-
+	
 	void loadAllMusicAndSounds()
 	{
 		allMusic.push_back({});
@@ -192,7 +212,7 @@ namespace Audio
 			PlaySound(allSounds[sound]);
 			soundsPlayed.push_back(allSounds[sound]);
 		}
-		*/
+		
 
 		PlaySound(allSounds[sound]);
 		soundsPlayed.push_back(allSounds[sound]);
@@ -226,5 +246,6 @@ namespace Audio
 			}
 		}
 	}
-
+	
 }
+*/

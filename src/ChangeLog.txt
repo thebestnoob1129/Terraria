@@ -13,7 +13,8 @@
 - Added Day/Night cycle
 - Added World Save
 - Added Entity Save
-
+- Added New Main Menu
+- Added New Ui System
 [ Fixed ]
 
 - Entites drop items randomly by default

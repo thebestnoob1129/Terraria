@@ -68,9 +68,6 @@ void DrawBackground::draw(Texture2D bg, float deltaTime, Camera2D camera,
 
 		DrawTexturePro(bg, src, dest, { 0, 0 }, 0.0f, { 255, 255, 255, static_cast<unsigned char>(255 * opacity) });
 
-
-
-
 	};
 
 	drawOneBackground();

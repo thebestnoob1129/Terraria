@@ -11,6 +11,7 @@ void AssetManager::loadAll()
 	
 	tree = LoadTexture(RESOURCES_PATH "treetextures.png");
 	items = LoadTexture(RESOURCES_PATH "items.png");
+	hearts = LoadTexture(RESOURCES_PATH "hearts.png");
 
 	// Backgrounds
 	forestBG = LoadTexture(RESOURCES_PATH "forestBG.png");

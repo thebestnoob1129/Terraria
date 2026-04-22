@@ -186,10 +186,10 @@ struct PhysicalEntity
 		
 		*this = {};
 
-		if (!j.contains("posX") || !j["posX.isNumber"]){ return false; }
+		if (!j.contains("posX") || !j["posX"].is_number()){ return false; }
 		transform.position.x = j["posX"];
 
-		if (!j.contains("posY") || !j["posY.isNumber"]){ return false; }
+		if (!j.contains("posY") || !j["posY"].is_number()){ return false; }
 		transform.position.y = j["posY"];
 
 		if (j.contains("velX"))

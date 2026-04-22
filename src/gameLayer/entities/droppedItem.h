@@ -22,8 +22,6 @@ struct DroppedItem : public Entity
 
 	int getEntityType() { return EntityType_DroppedItem; }
 
-	int getEntityList() override { return Entity_DroppedItem; }
-
 	float getMaxLife() override { return 1.f; }
 
 	Json formatToJson() override;

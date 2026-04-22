@@ -14,9 +14,13 @@ void generateWorld(GameMap& gameMap, int w = 2000, int h = 1000);
 
 float* generateNoise(int seed, FastNoiseSIMD::NoiseType noise, unsigned int octaves, float frequency, float gain = 0.25f, int w = 1, int h = 1, int z = 0);
  
-void generateWorm(GameMap& gameMap, float x, float y, int length, float radius = 2.5f, bool isBlock = true);
-
 void generateCave(GameMap& gameMap, int octaves, float frequency, float radius = 5);
+
+void generateWorm(GameMap& gameMap, float x, float y, int length, float radius = 2.5f, bool isBlock = true, Block block = Block{Block::air, 0});
+
+void generatePerlin(GameMap& gameMap, Block block, Vector2 worm = {25, 25}, float chance = 0.5f);
+
+void generateOre(GameMap& gameMap, Block ore, Wall wall, int octaves, float frequency, float radius);
 
 static void generateTrees(GameMap& gameMap);
 
@@ -25,6 +29,7 @@ void createWorldLayer(GameMap& gameMap, WorldLayer layer, bool hasGrass = false)
 
 //void createBiome(GameMap& gameMap, Block ground, Wall wall, Vector2 width, Vector2 height = Vector2{ 0.2f, 0.4f }, bool hasGrass = false);
 void createBiome(GameMap& gameMap, Biome biome, bool hasGrass = false);
+void createBiome2(GameMap& gameMap, Biome biome, bool hasGrass = false);
 
 Structure generateStructure(GameMap& gameMap, const char* filename);
 

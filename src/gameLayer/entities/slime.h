@@ -28,9 +28,7 @@ struct Slime : Entity
 	
 	bool update(float deltaTime, EntityUpdateData entityUpdateData) override;
 
-	int getEntityType() override { return EntityType_Slime; }
-
-	int getEntityList() override { return Entity_Slime; }
+	int getEntityType() override { return Entity_Slime; }
 
 	float getMaxLife() override { return 10; }
 

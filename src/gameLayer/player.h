@@ -30,13 +30,11 @@ struct Player : public Entity
 
 	void render(AssetManager& assetManager) override;
 
-	int getEntityType() override { return EntityType_Player; };
-
-	int getEntityList() override { return Entity_Player; };
+	int getEntityType() override { return EntityType_Player; }
 
 	bool update(float deltaTime, EntityUpdateData entityUpdateData) override;
 
-	float getMaxLife() override { return 10; }
+	float getMaxLife() override { return 40; }
 
 	Json formatToJson() override ;
 

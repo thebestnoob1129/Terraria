@@ -4,7 +4,6 @@
 
 #include <entity.h>
 #include <raylib.h>
-#include <set>
 
 struct Zombie : public Entity
 {
@@ -17,7 +16,6 @@ struct Zombie : public Entity
 
 	}
 
-
 	Vector2& getPosition()
 	{
 		return physics.transform.position;
@@ -27,9 +25,7 @@ struct Zombie : public Entity
 
 	bool update(float deltaTime, EntityUpdateData entityUpdateData) override;
 
-	int getEntityType() override { return EntityType_Humanoid; }
-
-	int getEntityList() override { return Entity_Zombie; }
+	int getEntityType() override { return Entity_Zombie; }
 
 	float getMaxLife() override { return 10; }
 

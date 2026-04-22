@@ -357,7 +357,7 @@ bool loadWorld(GameMap& gameMap, EntityHolder& entities, Player& player)
 
 				switch (entityType)
 				{
-				case EntityType_Slime:
+				case Entity_Slime:
 				{
 					Slime slime;
 					if (slime.loadFromJson(entityJson))

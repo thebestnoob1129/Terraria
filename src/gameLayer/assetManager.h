@@ -8,13 +8,13 @@
 struct AssetManager
 {
 	// Environment
-	Texture2D dirt = {};
 	Texture2D textures = {};
 	Texture2D walls = {};
 	Texture2D frame = {};
 	Texture2D tree = {};
 	Texture2D items = {};
-	
+	Texture2D hearts = {};
+
 	// Backgrounds
 
 	// Forest

@@ -102,6 +102,8 @@ struct Item
 		return ::isBlock(type);
 	}
 
+	virtual int getMaxStack() { return 999; }
+
 };
 
 Texture getTextureForItemType(int itemType, AssetManager& assetManager);

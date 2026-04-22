@@ -23,24 +23,16 @@ struct EntityAnimation;
 
 using Json = nlohmann::json;
 
-enum EntityList
-{
-	Entity_Player = 0,
-	Entity_DroppedItem,
+enum EntityType {
+	EntityType_Player = 0,
+	EntityType_DroppedItem,
+	EntityType_Tool,
 	Entity_Slime,
 	Entity_BlueSlime,
 	Entity_Mummy,
 	Entity_Zombie,
 	Entity_Zombie_Eskimo,
 	ENTITY_COUNT
-};
-
-enum EntityType {
-	EntityType_Player = 0,
-	EntityType_Slime,
-	EntityType_Humanoid,
-	EntityType_DroppedItem,
-	EntityType_Tool,
 };
 
 struct EntityUpdateData {
@@ -90,8 +82,6 @@ struct Entity {
 	virtual void setColliderSize() = 0;
 
 	virtual int getEntityType() = 0;
-
-	virtual int getEntityList() = 0;
 	
 	virtual float getMaxLife() = 0;
 
@@ -104,7 +94,7 @@ struct Entity {
 		json["physics"] = physics.formatToJson();
 		json["life"] = life;
 
-		json["entityTime"] = getEntityList();
+		json["entityType"] = getEntityType();
 	}
 
 	bool loadCommonEntityStuffFromJson(Json &json)
